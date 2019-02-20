@@ -68,7 +68,7 @@ public class Controller
     private DirectoryChooser directoryChooser;
     private Main main;
     private enum ClientStatus {Disconnected, Connected, Downloading, Extracting, Connecting, Updating}
-    public  enum JobStatusListing {built,  Успешно, Провалилось, Прервано, Приостановлено, процессе, Неизвестно, Ошибка}
+    public  enum JobStatusListing {built,  Успешно, Провалилось, Прервано, Приостановлено, Впроцессе, Неизвестно, Ошибка}
     private static final javafx.scene.image.Image okImage = new Image("/image/ok.png", true);
     private static final javafx.scene.image.Image cancelImage = new Image("/image/cancel.png", true);
 
@@ -100,7 +100,7 @@ public class Controller
                     System.out.println(formatForDateNow.format(date) + ": " + out);
 
                     if (!out.equals("No jobs has been updated"))
-                        writeToLog("This jobs has been updated:\n" + out);
+                        writeToLog("Status of this jobs has been updated:\n" + out);
                     TimeUnit.SECONDS.sleep(5);
                 }
                 catch (Exception e) {
@@ -327,7 +327,7 @@ public class Controller
     {
         System.out.print("Refreshing job status... ");
         long startTime = System.currentTimeMillis();
-        String jobUpdated = "";
+        String out = "";
         List<jobStatus> oldJobsStatusList = jobsStatusList;
         jobsStatusList.clear();
 
@@ -358,8 +358,13 @@ public class Controller
                     jobStatus oldStatus = (jobStatus) oldStatusIterator.next();
                     //System.out.println("OLD. Job name: " + oldStatus.getJobName() + ", status: " + oldStatus.getJobStatus());
                     if (newStatus.getJobName().equals(oldStatus.getJobName())) {
-                        if (!newStatus.equals(oldStatus))
-                            jobUpdated = jobUpdated + newStatus.getJobName() + " changed status to: " + newStatus.getJobStatus() + "\n";
+                        if (!newStatus.equals(oldStatus)) {
+                            System.out.println(newStatus.getJobName() + " changed status to: " + newStatus.getJobStatus());
+                            if (newStatus.getJobStatus() == JobStatusListing.Впроцессе)
+                                out = out + newStatus.getJobName() + " changed status to: " + "В процессе" + "\n";
+                            else
+                                out = out + newStatus.getJobName() + " changed status to: " + newStatus.getJobStatus() + "\n";
+                        }
                         break;
                     }
                 }
@@ -373,10 +378,10 @@ public class Controller
         time = time / 1000;
         System.out.println(time + " sec");
 
-        if (jobUpdated.equals(""))
-            jobUpdated = "No jobs has been updated";
+        if (out.equals(""))
+            out = "No jobs has been updated";
 
-        return jobUpdated;
+        return out;
     }
 
 //---------------------вывод в лог/статус бар---------------------
@@ -491,8 +496,8 @@ public class Controller
                     return JobStatusListing.Прервано;
                 case "Приостановлено":
                     return JobStatusListing.Приостановлено;
-                case "процессе":
-                    return JobStatusListing.процессе;
+                case "В процессе":
+                    return JobStatusListing.Впроцессе;
                 case "built":
                     return JobStatusListing.built;
                 default:
