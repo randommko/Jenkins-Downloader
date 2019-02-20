@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane fx:id="root" maxHeight="600.0" maxWidth="1000.0" minHeight="-Infinity" minWidth="-Infinity" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.Controller">
+    <children>
+        <VBox prefHeight="600.0" prefWidth="1000.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <children>
+                <HBox maxHeight="25.0" maxWidth="1.7976931348623157E308" prefHeight="25.0" spacing="3.0">
+                    <children>
+                        <Label alignment="CENTER" maxHeight="25.0" maxWidth="1.7976931348623157E308" minHeight="25.0" minWidth="100.0" prefHeight="25.0" prefWidth="400.0" text="Список доступных для скачивания компонентов" />
+                        <Label alignment="CENTER" maxHeight="25.0" maxWidth="1.7976931348623157E308" minHeight="25.0" minWidth="10.0" prefHeight="25.0" prefWidth="600.0" text="Log" />
+                    </children>
+                    <padding>
+                        <Insets left="2.0" />
+                    </padding>
+                </HBox>
+                <HBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="950.0" spacing="3.0">
+                    <children>
+                        <ListView fx:id="jobListView" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="200.0" minWidth="100.0" prefHeight="550.0" prefWidth="400.0" />
+                        <TextArea fx:id="logTextArea" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="200.0" minWidth="10.0" prefHeight="550.0" prefWidth="600.0" />
+                    </children>
+                </HBox>
+                <HBox maxHeight="25.0" maxWidth="1.7976931348623157E308" prefHeight="25.0" spacing="2.0">
+                    <children>
+                        <Button fx:id="refreshButton" maxHeight="25.0" maxWidth="100.0" minHeight="25.0" minWidth="70.0" mnemonicParsing="false" nodeOrientation="LEFT_TO_RIGHT" onAction="#connectToServer" prefHeight="25.0" prefWidth="100.0" text="Refresh" />
+                        <Label fx:id="serverAddrlabel" maxHeight="25.0" maxWidth="100.0" minHeight="25.0" minWidth="75.0" prefHeight="25.0" prefWidth="75.0" text="Server addres:" />
+                        <TextField fx:id="serverAddressTextField" maxHeight="25.0" maxWidth="1.7976931348623157E308" minHeight="25.0" minWidth="150.0" prefHeight="25.0" prefWidth="215.0" text="http://nix.mrcur.ru:8080" />
+                        <Button fx:id="downloadButton" maxHeight="25.0" maxWidth="140.0" minHeight="25.0" minWidth="75.0" mnemonicParsing="false" onAction="#downloadJobButton" prefHeight="25.0" prefWidth="100.0" text="Download" />
+                        <Button fx:id="chooseDirectoryButton" maxHeight="25.0" maxWidth="140.0" minHeight="25.0" minWidth="75.0" mnemonicParsing="false" onAction="#setDirectory" prefHeight="25.0" prefWidth="100.0" text="Выбрать..." />
+                        <TextField fx:id="downloadPathTextField" maxHeight="25.0" maxWidth="1.7976931348623157E308" minHeight="25.0" minWidth="150.0" prefHeight="25.0" prefWidth="270.0" text="D:\SPOIO" />
+                        <Label fx:id="statusLable" maxHeight="25.0" maxWidth="40.0" minHeight="25.0" minWidth="40.0" prefHeight="25.0" prefWidth="40.0" text="Status:" />
+                        <Label fx:id="statusLabel" maxHeight="25.0" maxWidth="80.0" minHeight="25.0" minWidth="80.0" prefHeight="25.0" prefWidth="80.0" text="Not connected" textFill="RED" />
+                        <ProgressIndicator fx:id="progressIndicator" maxHeight="19.0" maxWidth="35.0" minHeight="19.0" minWidth="35.0" prefHeight="19.0" prefWidth="35.0">
+                            <HBox.margin>
+                                <Insets top="2.0" />
+                            </HBox.margin></ProgressIndicator>
+                    </children>
+                </HBox>
+                <HBox maxHeight="25.0" prefHeight="25.0" />
+            </children>
+        </VBox>
+    </children>
+</AnchorPane>
