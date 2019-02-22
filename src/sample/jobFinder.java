@@ -1,12 +1,14 @@
 package sample;
 
 
+import com.thoughtworks.xstream.mapper.Mapper;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
 
@@ -73,7 +75,7 @@ public class jobFinder
                 InputStream inputstream = url.openStream();
                 if (inputstream.available() > 0)
                 {
-                    JenkinsJobs job = new JenkinsJobs(controller.getJobCounter(), jobName, jobID, url, controller.getJobStatus(elementTD));
+                    JenkinsJobs job = new JenkinsJobs(controller.getJobCounter(), jobName, jobID, url, true, controller.getJobStatus(elementTD));
                     controller.addJobToLstOfJob(job); //добавление джобы в список
                     //System.out.println("Adding job to ListView: " + job.getJobName());
                     //controller.addJobInListView(job); //добавление в ListView новой джобы
@@ -83,6 +85,16 @@ public class jobFinder
             }
             catch (IOException e)
             {
+                try {
+                    URL url =  new URL(servAddr + "/view/actual/job/" + jobName + "/lastSuccessfulBuild/artifact/*zip*/archive.zip");
+                    JenkinsJobs job = new JenkinsJobs(controller.getJobCounter(), jobName, jobID, url, false, controller.getJobStatus(elementTD));
+                    controller.addJobToLstOfJob(job);
+                }
+                catch (MalformedURLException err)
+                {
+
+                }
+
 //                System.out.println("File not found for: " + jobName);
             }
         }

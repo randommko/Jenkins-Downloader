@@ -45,84 +45,74 @@ public class Controller
     @FXML
     private ListView<String> jobListView = new ListView<>();
     @FXML
-    private Button refreshButton, downloadButton, chooseDirectoryButton;
+    private Button refreshButton, downloadButton;
     @FXML
     private ProgressIndicator progressIndicator;
-    @FXML
-    private SplitPane splitPane;
+    //@FXML
+    //private SplitPane splitPane;
     @FXML
     private ProgressBar progressBar;
     @FXML
     private HBox topHBox, midHBox, botHBox;
-    @FXML
-    private VBox vBOx;
+    //@FXML
+    //private VBox vBOx;
     @FXML
     private AnchorPane root;
-    @FXML
-    private Label statusLable, serverAddrlabel, logLabel;
+    //@FXML
+    //private Label statusLable, serverAddrlabel, logLabel;
 
     private String serverAddress;
     private ObservableList<JenkinsJobs> ListOfJobs = FXCollections.observableArrayList ();
     private int JobCounter = 0;
-    private int __width, __height;
-    private DirectoryChooser directoryChooser;
+    //private int __width, __height;
+    //private DirectoryChooser directoryChooser;
     private Main main;
     private enum ClientStatus {Disconnected, Connected, Downloading, Extracting, Connecting, Updating}
     public  enum JobStatusListing {built,  Успешно, Провалилось, Прервано, Приостановлено, Впроцессе, Неизвестно, Ошибка}
-    private static final javafx.scene.image.Image okImage = new Image("/image/ok.png", true);
-    private static final javafx.scene.image.Image cancelImage = new Image("/image/cancel.png", true);
-
-    private List<jobStatus> jobsStatusList;
-    private Thread threadUpdateStatusOfJobs;
-    private Thread threadGetJobList;
+    //private static final javafx.scene.image.Image okImage = new Image("image/ok.png", true);
+    //private static final javafx.scene.image.Image cancelImage = new Image("image/cancel.png", true);
 
     @FXML
-    private void initialize()                   //метод в котором выполняется код при запуске приложения
+    private  void initialize() //метод в котором выполняется код при запуске приложения
     {
         initWindow();
 
         jobListView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-        jobsStatusList = new ArrayList<>();
-
+        main.trayMessage("Hello! This is Jenkins Downloader!");
         setStatus(ClientStatus.Connecting);
         connectToServer();
 
         Runnable updateStatus = () -> {
             String out;
 
-            SimpleDateFormat formatForDateNow = new SimpleDateFormat("HH:mm:ss");
-
             do {
                 try {
                     out = refreshJobStatus();   //обновляем статусы всех работ. Возврашает строку с навзаниями работ у которых статус изменился
 
-                    Date date = new Date();
-                    System.out.println(formatForDateNow.format(date) + ": " + out);
-
-                    if (!out.equals("No jobs has been updated"))
-                        writeToLog("Status of this jobs has been updated:\n" + out);
-                    TimeUnit.SECONDS.sleep(5);
+                    if (!out.equals("No jobs has been updated")) {
+                        writeToLog(out);
+                        //main.trayMessage(out);
+                    }
+                    TimeUnit.SECONDS.sleep(1);
                 }
                 catch (Exception e) {
                     System.out.println("Error on job status updating: " + e);
                 }
             } while (true);
-
         };
-
-        threadUpdateStatusOfJobs = new Thread(updateStatus);
+        Thread threadUpdateStatusOfJobs = new Thread(updateStatus);
         threadUpdateStatusOfJobs.start();
     }
 
     @FXML
-    private void connectToServer()              //нажатие кнопки "Refresh"
+    private  void connectToServer()              //нажатие кнопки "Refresh"
     {
         setStatus(ClientStatus.Updating);
 
         Runnable runnableGetJobList = () -> {
             try {
-                int numOfFoundJobs = getJobListFromServer();
-                writeToLog("Available jobs found: " + numOfFoundJobs);  //Получение спика работ в текущем потоке
+                int numOfFoundJobs = getJobListFromServer();    //Получение спика работ
+                writeToLog("Job list has been updated.");
                 setStatus(ClientStatus.Connected);
             }
             catch (IOException e) {
@@ -131,11 +121,11 @@ public class Controller
             }
         };
 
-        threadGetJobList = new Thread(runnableGetJobList);
+        Thread threadGetJobList = new Thread(runnableGetJobList);
 
-        jobListView.getItems().remove(0, jobListView.getItems().size());
-        JobCounter = 0;
-        ListOfJobs.remove(0, ListOfJobs.size());
+        jobListView.getItems().remove(0, jobListView.getItems().size());    //очищаем ListView
+        JobCounter = 0;                                                     //обнуляем счетчик количества найденых работ
+        ListOfJobs.remove(0, ListOfJobs.size());                            //очищаем список работ
 
         serverAddress = serverAddressTextField.getText();   //запоминаем адресс сервера
         System.out.println("Server address: " + serverAddress);
@@ -144,7 +134,7 @@ public class Controller
     }
 
     @FXML
-    private void downloadJobButton ()           //Нажатие на кнопку "Download" и начало скачивания в новом потоке
+    private  void downloadJobButton ()           //Нажатие на кнопку "Download" и начало скачивания в новом потоке
     {
         setStatus(ClientStatus.Downloading);
 
@@ -180,6 +170,7 @@ public class Controller
                 else
                     writeToLog("Start downloading: " + job.getJobName() + " (" + job.getJobID() + "), " + _lastSize + "Mb");
                 downloadJob(file, job.getURL(), getLastSize(folder));  //скачивание
+                writeToLog("Download complete" + job.getJobName() + " (" + job.getJobID() + ")");
                 setStatus(ClientStatus.Connected);
             }
             else {
@@ -191,7 +182,7 @@ public class Controller
         thread.start();
     }
 
-    private void downloadJob (File file, URL url, double size)   //скачивание
+    private  void downloadJob (File file, URL url, double size)   //скачивание
     {
         setStatus(ClientStatus.Downloading);
         progressBar.setProgress(0);
@@ -226,10 +217,8 @@ public class Controller
                 else
                     progressBar.setProgress((file.length())/size);
             }
-
             inputstream.close();
             fileoutputstream.close();
-            writeToLog("Download complete");
 
             unzip(file);
         }
@@ -239,10 +228,10 @@ public class Controller
         catch (IOException e) {
             System.out.println("Ошибка: " + e);
         }
-        writeToLog("Extract complete");
+        //writeToLog("Extract complete");
     }
 
-    public void unzip(File file)
+    public  void unzip(File file)
     {
         String s = file.getPath();
 //        System.out.println("Path: " + s);
@@ -258,9 +247,9 @@ public class Controller
     }
 
     @FXML
-    public void setDirectory ()            //нажатие на кнопку "Выбрать директорию..."
+    public  void setDirectory ()            //нажатие на кнопку "Выбрать директорию..."
     {
-        directoryChooser = new DirectoryChooser();
+        DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("Выберете папку для сохранения");
 
         try {
@@ -272,7 +261,7 @@ public class Controller
         }
     }
 
-    private int getJobListFromServer()  //Получение списка работ
+    private  int getJobListFromServer()  //Получение списка работ
             throws IOException
     {
         System.out.println("Getting job list from server...");
@@ -297,78 +286,66 @@ public class Controller
             try {
                 inputstream = url.openStream(); //пробуем открыть сформированную ссылку, если не получится то мы сразу попадаем в блок catch, иначе выполнение кода продолжится дальше и мы добавим работу в наш список
 
-                ListOfJobs.add(new JenkinsJobs(++JobCounter, jobName, jobID, url, getJobStatus(element)));    //создаем новую джобу с полученым с сервера именем, добавляем джобу в список и увеличиваем счетчик
-                //System.out.println("Found job: " + ListOfJobs.get(JobCounter - 1).getJobName() + ": " + ListOfJobs.get(JobCounter - 1).getJobStatus());
-                Platform.runLater(
-                        () -> {
-                            jobListView.getItems().add(ListOfJobs.get(JobCounter - 1).getJobName() + " (" + ListOfJobs.get(JobCounter - 1).getJobID() + ")");    //добавляем найденую работу в элмент ListView
-                        }
-                );
-
+                JenkinsJobs job = new JenkinsJobs(++JobCounter, jobName, jobID, url, true, getJobStatus(element));  //создаем новую джобу с полученым с сервера именем, добавляем джобу в список и увеличиваем счетчик
+                ListOfJobs.add(job);
+                addJobToListView(job);
                 inputstream.close();
-
             }
             catch (FileNotFoundException e) {
-                //System.out.println("File not found for: " + jobName);
-            }
-            catch (IOException e) {
-                //System.out.println("IOError: " + e);
+                ListOfJobs.add(new JenkinsJobs(++JobCounter, jobName, jobID, url, false, getJobStatus(element)));
             }
             catch (Exception e) {
-                //System.out.println("Error: " + e);
+                ListOfJobs.add(new JenkinsJobs(++JobCounter, jobName, jobID, url, false, getJobStatus(element)));
+                System.out.println("Unknown error: " + e);
             }
-
         }
-        //return changedJobs;
         return ListOfJobs.size();
     }
 
-    private String refreshJobStatus()
+    private  String refreshJobStatus()
     {
         System.out.print("Refreshing job status... ");
         long startTime = System.currentTimeMillis();
         String out = "";
-        List<jobStatus> oldJobsStatusList = jobsStatusList;
-        jobsStatusList.clear();
 
         try {
             Document document = Jsoup.connect(serverAddress).get(); //получаем копию страницы в виде документа
             //System.out.println(document);
             Elements elements = document.select("tr[class*=job-status]");   //создаем список tr-элементов страницы которые содержат текст "job-status" внутри себя
-            //Elements elementsTD = document.select("[alt~=[Успешно|Провалилось|Прервано|Приостановлено|процессе|built]]");   //создаем список всех элеметов страницы которые содержат одно из перечисленных слов-состояний
 
-            //Iterator statusIterator = elementsTD.iterator();            //создаем итератор по элементам страницы содержащим состояния работ
             Iterator iteratorListOfJobs = elements.iterator();          //создаем итератор по элментам страницы содержащим имена работ
 
             while ( iteratorListOfJobs.hasNext() ) {
                 Element element = (Element) iteratorListOfJobs.next();                  //берем следующую работу
                 String jobName = element.attr("id");                         //находим строку начинающуюся с "id"
                 jobName = jobName.substring(4, jobName.length());                       //берем символы с 4 до последнего, это и есть имя работы
-                //Element elementTD = (Element) statusIterator.next();                    //берем следующий элемент состояния работы
-                jobsStatusList.add(new jobStatus(jobName, getJobStatus(element)));    //добавляем сочетание "имя_работы + статус_сборки" в список
-            }
-            //Сравнение старого и нового списка
-            Iterator newStatusIterator = jobsStatusList.iterator();
 
-            while (newStatusIterator.hasNext()) {
-                jobStatus newStatus = (jobStatus) newStatusIterator.next();
-                //System.out.println("NEW. Job name: " + newStatus.getJobName() + ", status: " + newStatus.getJobStatus());
-                Iterator oldStatusIterator = oldJobsStatusList.iterator();
-                while (oldStatusIterator.hasNext()) {
-                    jobStatus oldStatus = (jobStatus) oldStatusIterator.next();
-                    //System.out.println("OLD. Job name: " + oldStatus.getJobName() + ", status: " + oldStatus.getJobStatus());
-                    if (newStatus.getJobName().equals(oldStatus.getJobName())) {
-                        if (!newStatus.equals(oldStatus)) {
-                            System.out.println(newStatus.getJobName() + " changed status to: " + newStatus.getJobStatus());
-                            if (newStatus.getJobStatus() == JobStatusListing.Впроцессе)
-                                out = out + newStatus.getJobName() + " changed status to: " + "В процессе" + "\n";
-                            else
-                                out = out + newStatus.getJobName() + " changed status to: " + newStatus.getJobStatus() + "\n";
-                        }
-                        break;
+                String _s1 = element.child(3).text();
+                int posNumber = _s1.indexOf("#");
+                String stringJobID = _s1.substring(posNumber + 1);
+                int jobID = getIntJobID(stringJobID);
+
+                for (int i = 0; i < JobCounter; i++)
+                {
+                    JobStatusListing status = getJobStatus(element);
+                    if ((ListOfJobs.get(i).getJobName().equals(jobName)) & (!ListOfJobs.get(i).getJobStatus().equals(status)))
+                    {
+                        ListOfJobs.get(i).setJobStatus(status);
+
+                        if (ListOfJobs.get(i).getJobID() != jobID)
+                            ListOfJobs.get(i).setJobID(jobID);
+
+                        System.out.println(ListOfJobs.get(i).getJobName() + " changed status to: " + ListOfJobs.get(i).getJobStatus());
+                        if (ListOfJobs.get(i).getJobStatus() == JobStatusListing.Впроцессе)
+                            out = out + "\"" + ListOfJobs.get(i).getJobName() + "\" changed status to: " + "\"В процессе.\"" + "\n";
+                        else
+                            out = out + "\"" + ListOfJobs.get(i).getJobName() + " (#" + ListOfJobs.get(i).getJobID() + ")\" changed status to: \"" + ListOfJobs.get(i).getJobStatus() + "\"\n";
                     }
                 }
             }
+
+            if (!out.equals(""))
+                out = out.substring(0, out.length() - 1);
         }
         catch (IOException e) {
             System.out.println("Error on refreshing jobs status: " + e);
@@ -379,8 +356,11 @@ public class Controller
         System.out.println(time + " sec");
 
         if (out.equals(""))
-            out = "No jobs has been updated";
+           out = "No jobs has been updated";
 
+        SimpleDateFormat formatForDateNow = new SimpleDateFormat("HH:mm:ss");
+        Date date = new Date();
+        System.out.println(formatForDateNow.format(date) + ": " + out);
         return out;
     }
 
@@ -466,7 +446,7 @@ public class Controller
 
         try
         {
-            logTextArea.setText(logTextArea.getText() + formatForDateNow.format(date) + ": " + text + "\n");
+            logTextArea.setText(formatForDateNow.format(date) + ": " + text + "\n" + logTextArea.getText());
         }
         catch (Exception e)
         {
@@ -507,14 +487,22 @@ public class Controller
         return JobStatusListing.Ошибка;
     }
 
+    private void addJobToListView (JenkinsJobs job)
+    {
+        Platform.runLater(
+                () -> {
+                    jobListView.getItems().add(job.getJobName() + " (" + job.getJobID() + ")");    //добавляем найденую работу в элмент ListView
+                }
+        );
+    }
     //---------------------мелкие функции---------------------
 
     private void initWindow()
     {
         main = new Main();
 
-        __width = main.getSCENE_WIDTH();
-        __height = main.getSCENE_HEIGHT();
+        //__width = main.getSCENE_WIDTH();
+        //__height = main.getSCENE_HEIGHT();
 
         logTextArea.setEditable(false);
 

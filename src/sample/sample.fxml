@@ -35,7 +35,7 @@
                <children>
                   <Button fx:id="refreshButton" maxHeight="25.0" maxWidth="100.0" minHeight="25.0" minWidth="60.0" mnemonicParsing="false" nodeOrientation="LEFT_TO_RIGHT" onAction="#connectToServer" prefHeight="25.0" prefWidth="100.0" text="Refresh" />
                   <Label fx:id="serverAddrlabel" maxHeight="25.0" maxWidth="100.0" minHeight="25.0" minWidth="75.0" prefHeight="25.0" prefWidth="75.0" text="Server addres:" />
-                  <TextField fx:id="serverAddressTextField" maxHeight="25.0" maxWidth="1.7976931348623157E308" minHeight="25.0" minWidth="140.0" prefHeight="25.0" prefWidth="200.0" />
+                  <TextField fx:id="serverAddressTextField" maxHeight="25.0" maxWidth="1.7976931348623157E308" minHeight="25.0" minWidth="140.0" prefHeight="25.0" prefWidth="200.0" text="http://nix.mrcur.ru:8080" />
                   <Button fx:id="downloadButton" maxHeight="25.0" maxWidth="140.0" minHeight="25.0" minWidth="75.0" mnemonicParsing="false" onAction="#downloadJobButton" prefHeight="25.0" prefWidth="100.0" text="Download" />
                   <Button fx:id="chooseDirectoryButton" maxHeight="25.0" maxWidth="140.0" minHeight="25.0" minWidth="75.0" mnemonicParsing="false" onAction="#setDirectory" prefHeight="25.0" prefWidth="100.0" text="Выбрать..." />
                   <TextField fx:id="downloadPathTextField" maxHeight="25.0" maxWidth="1.7976931348623157E308" minHeight="25.0" minWidth="50.0" prefHeight="25.0" prefWidth="200.0" text="D:\SPOIO" />

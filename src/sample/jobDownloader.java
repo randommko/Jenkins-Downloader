@@ -28,8 +28,6 @@ public class jobDownloader      //Нечто, реализующее интер�
     @Override
     public void run()		//Этот метод будет выполняться в побочном потоке
     {
-
-        //TODO: не работает управлние элементами UI из отдельного потока
         controller.setStatusText("Downloading", Color.YELLOW);
 
         Platform.runLater(new Runnable() {
@@ -79,7 +77,6 @@ public class jobDownloader      //Нечто, реализующее интер�
         }
         catch (IOException e)
         {
-            //TODO: Реализовать вывод сообщений в протокол
             System.out.println("Ошибка: " + e);
         }
         controller.setStatusText("Connected", Color.GREEN);
