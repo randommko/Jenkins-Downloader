@@ -25,6 +25,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.awt.*;
 import java.io.*;
 import java.lang.String;
 import java.net.URL;
@@ -35,7 +36,6 @@ import java.util.concurrent.TimeUnit;
 
 public class Controller
 {
-
     @FXML
     private volatile Label statusLabel;
     @FXML
@@ -48,29 +48,20 @@ public class Controller
     private Button refreshButton, downloadButton;
     @FXML
     private ProgressIndicator progressIndicator;
-    //@FXML
-    //private SplitPane splitPane;
     @FXML
     private ProgressBar progressBar;
     @FXML
     private HBox topHBox, midHBox, botHBox;
-    //@FXML
-    //private VBox vBOx;
     @FXML
     private AnchorPane root;
-    //@FXML
-    //private Label statusLable, serverAddrlabel, logLabel;
 
     private String serverAddress;
     private ObservableList<JenkinsJobs> ListOfJobs = FXCollections.observableArrayList ();
     private int JobCounter = 0;
-    //private int __width, __height;
-    //private DirectoryChooser directoryChooser;
+
     private Main main;
     private enum ClientStatus {Disconnected, Connected, Downloading, Extracting, Connecting, Updating}
     public  enum JobStatusListing {built,  Успешно, Провалилось, Прервано, Приостановлено, Впроцессе, Неизвестно, Ошибка}
-    //private static final javafx.scene.image.Image okImage = new Image("image/ok.png", true);
-    //private static final javafx.scene.image.Image cancelImage = new Image("image/cancel.png", true);
 
     @FXML
     private  void initialize() //метод в котором выполняется код при запуске приложения
@@ -78,7 +69,7 @@ public class Controller
         initWindow();
 
         jobListView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-        main.trayMessage("Hello! This is Jenkins Downloader!");
+
         setStatus(ClientStatus.Connecting);
         connectToServer();
 
@@ -91,7 +82,7 @@ public class Controller
 
                     if (!out.equals("No jobs has been updated")) {
                         writeToLog(out);
-                        //main.trayMessage(out);
+                        trayMessage(out);
                     }
                     TimeUnit.SECONDS.sleep(1);
                 }
@@ -108,10 +99,10 @@ public class Controller
     private  void connectToServer()              //нажатие кнопки "Refresh"
     {
         setStatus(ClientStatus.Updating);
-
+        trayMessage("Updating job list");
         Runnable runnableGetJobList = () -> {
             try {
-                int numOfFoundJobs = getJobListFromServer();    //Получение спика работ
+                getJobListFromServer();    //Получение спика работ
                 writeToLog("Job list has been updated.");
                 setStatus(ClientStatus.Connected);
             }
@@ -166,15 +157,15 @@ public class Controller
             if (!file.exists() && !file.isFile()) {
 
                 if ((getLastSize(folder)) == -1)
-                    writeToLog("Start downloading: " + job.getJobName() + " (" + job.getJobID() + ")");
+                    writeToLog("Start downloading: " + job.getJobName() + " (#" + job.getJobID() + ")");
                 else
-                    writeToLog("Start downloading: " + job.getJobName() + " (" + job.getJobID() + "), " + _lastSize + "Mb");
+                    writeToLog("Start downloading: " + job.getJobName() + " (#" + job.getJobID() + "), " + _lastSize + "Mb");
                 downloadJob(file, job.getURL(), getLastSize(folder));  //скачивание
-                writeToLog("Download complete" + job.getJobName() + " (" + job.getJobID() + ")");
+                writeToLog("Download complete: " + job.getJobName() + " (#" + job.getJobID() + ")");
                 setStatus(ClientStatus.Connected);
             }
             else {
-                writeToLog(job.getJobName() + " (" + job.getJobID() + ") already exists");
+                writeToLog(job.getJobName() + " (#" + job.getJobID() + ") already exists");
                 setStatus(ClientStatus.Connected);
             }
         };
@@ -234,8 +225,6 @@ public class Controller
     public  void unzip(File file)
     {
         String s = file.getPath();
-//        System.out.println("Path: " + s);
-//        System.out.println(s);
         String s1 = s.substring(0, s.length() - 4);
         try {
             ZipFile zipfile = new ZipFile(file);
@@ -495,14 +484,31 @@ public class Controller
                 }
         );
     }
+
+    private void trayMessage (String text)
+    {
+        //TODO: исправить показ уведомлений из других классов
+        Runnable showMsg = () -> {
+            try {
+                String caption = "Jenkins Downloader";  //заголовок сообщения
+                //System.out.println("text to tray: " + text);
+                //System.out.println("caption: " + caption);
+                main.getTrayIcon().displayMessage(caption, text, TrayIcon.MessageType.INFO); //метод отображения сообщения в трее
+            }
+            catch (Exception e)
+            {
+                System.out.println("(Controller) Can't display tray message: " + e);
+            }
+        };
+        Thread threadUpdateStatusOfJobs = new Thread(showMsg);
+        threadUpdateStatusOfJobs.start();
+    }
+
     //---------------------мелкие функции---------------------
 
     private void initWindow()
     {
         main = new Main();
-
-        //__width = main.getSCENE_WIDTH();
-        //__height = main.getSCENE_HEIGHT();
 
         logTextArea.setEditable(false);
 
@@ -544,15 +550,12 @@ public class Controller
     public int getIntJobID(String stringJobID)
     {
         int jobID = -1;
-
         try {
             jobID = Integer.parseInt(stringJobID);
-//            System.out.println("jobID (int) = " + jobID);
         }
         catch (NumberFormatException e) {
-//            System.out.println("Error in getting job ID (int): " + e);
+            //System.out.println("Error in getting job ID (int): " + e);
         }
-
         return jobID;
     }
 
@@ -571,33 +574,9 @@ public class Controller
         }
     }
 
-    public ListView<String> getJobList()
-    {
-        return jobListView;
-    }
-
-    public  ObservableList<JenkinsJobs> getListOfJobs()
-    {
-        return ListOfJobs;
-    }
-
-    public int      getJobCounter()
+    public int getJobCounter()
     {
         return JobCounter;
     }
 
-    public void     setJobCounter(int num)
-    {
-        JobCounter = JobCounter + num;
-    }
-
-    public String   getServerAddress()
-    {
-        return serverAddress;
-    }
-
-    public void     setServerAddress(String addr)
-    {
-        serverAddress = addr;
-    }
 }

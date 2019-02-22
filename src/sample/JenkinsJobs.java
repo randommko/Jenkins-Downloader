@@ -10,6 +10,7 @@ public class JenkinsJobs
     private URL jobURL;       //ссылка на скачивание последнего успешного билда
     private Controller.JobStatusListing jobStatus; //статус последней сборки (пока нигде не используется)
     private boolean isFile;
+    //TODO: добавить возможность отображать тэг вместо найденого имени
 
     public JenkinsJobs(int jobNumber, String jobName, int jobID, URL jobURL, boolean isFile, Controller.JobStatusListing jobStatus)    //порядковый номер (полученный при поиске), имя, ИД, ссылка для скачивания
     {

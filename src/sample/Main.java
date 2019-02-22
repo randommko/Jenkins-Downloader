@@ -34,28 +34,25 @@ import static com.sun.javafx.scene.control.skin.Utils.getResource;
 
 public class Main extends Application
 {
-    private final int SCENE_WIDTH = 1000;
-    private final int SCENE_HEIGHT = 600;
     private Stage stage;
     private boolean flagFirtsMinimaise;
 
-
-    private java.awt.TrayIcon trayIcon;
+    private static java.awt.TrayIcon trayIcon;
     private static final String iconImageLoc
-//            "http://icons.iconarchive.com/icons/scafer31000/bubble-circle-3/16/GameCenter-icon.png";
            = "http://nix.mrcur.ru:8080/static/b5ec8aab/images/headshot.png";
     private Timer notificationTimer = new Timer();
 
     @Override
-    public void start(Stage primaryStage) throws Exception
+    public void start(Stage primaryStage)
     {
-        //TODO: добавить сворачивание в трей и показ уведомлений о новых билдах
         try
         {
             this.stage = primaryStage;
-            Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("sample/sample.fxml"));
+            Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("sample/main.fxml"));
 
             primaryStage.setTitle("Jenkins downloader");
+            final int SCENE_WIDTH = 1000;
+            final int SCENE_HEIGHT = 600;
             Scene scene = new Scene(root, SCENE_WIDTH, SCENE_HEIGHT);
             primaryStage.setScene(scene);
 
@@ -78,7 +75,7 @@ public class Main extends Application
             Platform.setImplicitExit(false);
 
             flagFirtsMinimaise = true;
-            //trayMessage("Hello! This is Jenkins Downloader!");
+            primaryStage.getIcons().add(new Image(iconImageLoc));
             primaryStage.show();
         }
         catch(Exception e)
@@ -150,24 +147,22 @@ public class Main extends Application
             }
 
             if (stage.isShowing()) {
-                System.out.println("Stage hide");
+                //System.out.println("Stage hide");
                 stage.hide();
             }
             else {
-                System.out.println("Stage show");
+                //System.out.println("Stage show");
                 stage.show();
                 stage.toFront();
             }
         }
     }
 
-    public void trayMessage (String text)
+    private void trayMessage (String text)
     {
             Runnable showMsg = () -> {
                 try {
                     String caption = "Jenkins Downloader";  //заголовок сообщения
-                    //System.out.println("text to tray: " + text);
-                    //System.out.println("caption: " + caption);
                     trayIcon.displayMessage(caption, text, TrayIcon.MessageType.INFO); //метод отображения сообщения в трее
                 }
                 catch (Exception e)
@@ -177,5 +172,10 @@ public class Main extends Application
             };
             Thread threadUpdateStatusOfJobs = new Thread(showMsg);
             threadUpdateStatusOfJobs.start();
+    }
+
+    public TrayIcon getTrayIcon ()
+    {
+        return trayIcon;
     }
 }
