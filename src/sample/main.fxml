@@ -3,49 +3,74 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextArea?>
-<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane fx:id="root" maxHeight="600.0" maxWidth="1000.0" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.Controller">
+<AnchorPane fx:id="root" maxHeight="600.0" maxWidth="1200.0" minWidth="700.0" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.MainController">
     <children>
-        <VBox fx:id="vBox" prefHeight="600.0" prefWidth="1000.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <VBox fx:id="vBox" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
             <children>
-                <HBox fx:id="topHBox" maxHeight="25.0" maxWidth="1.7976931348623157E308" prefHeight="25.0" spacing="3.0">
+                <HBox fx:id="midHBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="575.0">
                     <children>
-                        <Label alignment="CENTER" maxHeight="25.0" maxWidth="1.7976931348623157E308" minHeight="25.0" minWidth="100.0" prefHeight="25.0" prefWidth="400.0" text="Список доступных для скачивания компонентов" />
-                        <Label alignment="CENTER" maxHeight="25.0" maxWidth="1.7976931348623157E308" minHeight="25.0" minWidth="10.0" prefHeight="25.0" prefWidth="600.0" text="Log" />
+                  <AnchorPane fx:id="tableAnchorPane" prefWidth="700.0">
+                     <children>
+                        <VBox prefHeight="200.0" prefWidth="100.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                           <children>
+                              <HBox>
+                                 <children>
+                                          <Label alignment="CENTER" maxHeight="25.0" maxWidth="1.7976931348623157E308" minHeight="25.0" prefHeight="25.0" text="Список доступных для скачивания компонентов" HBox.hgrow="ALWAYS" />
+                                 </children>
+                              </HBox>
+                              <TableView fx:id="jobsTable" VBox.vgrow="ALWAYS">
+                                <columns>
+                                  <TableColumn fx:id="jobNameCol" editable="false" maxWidth="1.7976931348623157E308" prefWidth="150.0" text="Job name" />
+                                    <TableColumn fx:id="IDCol" editable="false" maxWidth="1.7976931348623157E308" prefWidth="100.0" text="Last success build (ID)" />
+                                  <TableColumn fx:id="jobStatusCol" editable="false" maxWidth="1.7976931348623157E308" prefWidth="100.0" text="Status of last build" />
+                                    <TableColumn fx:id="isFileCol" maxWidth="1.7976931348623157E308" prefWidth="100.0" text="Is File?" />
+                                    <TableColumn fx:id="tagCol" maxWidth="1.7976931348623157E308" prefWidth="100.0" text="Tag" />
+                                    <TableColumn fx:id="lastChangeCol" maxWidth="1.7976931348623157E308" prefWidth="150.0" text="Last change" />
+                                </columns>
+                              </TableView>
+                           </children>
+                        </VBox>
+                     </children>
+                  </AnchorPane>
+                  <AnchorPane fx:id="logAnchorPane" prefWidth="500.0">
+                     <children>
+                        <VBox prefHeight="200.0" prefWidth="100.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                           <children>
+                              <HBox prefHeight="25.0">
+                                 <children>
+                                          <Label alignment="CENTER" maxHeight="25.0" maxWidth="1.7976931348623157E308" minHeight="25.0" prefHeight="25.0" text="Log" HBox.hgrow="ALWAYS" />
+                                    <Button fx:id="logClearButton" maxWidth="50.0" minWidth="50.0" mnemonicParsing="false" onAction="#clearLog" prefWidth="50.0" text="Clear" />
+                                 </children>
+                              </HBox>
+                                    <TextArea fx:id="logTextArea" VBox.vgrow="ALWAYS" />
+                           </children>
+                        </VBox>
+                     </children>
+                  </AnchorPane>
                     </children>
-                    <padding>
-                        <Insets left="2.0" />
-                    </padding>
                 </HBox>
-                <HBox fx:id="midHBox" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="950.0" spacing="3.0">
+                <HBox fx:id="botHBox" maxHeight="25.0" maxWidth="1.7976931348623157E308" minHeight="25.0" prefHeight="25.0" spacing="2.0" VBox.vgrow="ALWAYS">
                     <children>
-                        <ListView fx:id="jobListView" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="200.0" minWidth="200.0" prefHeight="550.0" prefWidth="400.0" />
-                        <TextArea fx:id="logTextArea" maxHeight="550.0" maxWidth="600.0" minHeight="250.0" minWidth="200.0" prefHeight="550.0" prefWidth="600.0" />
-                    </children>
-                </HBox>
-                <HBox fx:id="botHBox" maxHeight="25.0" maxWidth="1.7976931348623157E308" minHeight="25.0" prefHeight="25.0" spacing="2.0">
-                    <children>
+                  <Label fx:id="settingsLabel" disable="true" maxHeight="19.0" maxWidth="19.0" minHeight="19.0" minWidth="19.0" onMouseClicked="#onSettingsClick" prefHeight="19.0" prefWidth="19.0" text=" Settings" HBox.hgrow="ALWAYS">
+                     <HBox.margin>
+                        <Insets bottom="3.0" left="1.0" top="3.0" />
+                     </HBox.margin></Label>
                         <Button fx:id="refreshButton" maxHeight="25.0" maxWidth="100.0" minHeight="25.0" minWidth="60.0" mnemonicParsing="false" nodeOrientation="LEFT_TO_RIGHT" onAction="#connectToServer" prefHeight="25.0" prefWidth="100.0" text="Refresh" />
-                        <Label fx:id="serverAddrlabel" maxHeight="25.0" maxWidth="100.0" minHeight="25.0" minWidth="75.0" prefHeight="25.0" prefWidth="75.0" text="Server addres:" />
-                        <TextField fx:id="serverAddressTextField" maxHeight="25.0" maxWidth="1.7976931348623157E308" minHeight="25.0" minWidth="140.0" prefHeight="25.0" prefWidth="200.0" text="http://nix.mrcur.ru:8080" />
                         <Button fx:id="downloadButton" maxHeight="25.0" maxWidth="140.0" minHeight="25.0" minWidth="75.0" mnemonicParsing="false" onAction="#downloadJobButton" prefHeight="25.0" prefWidth="100.0" text="Download" />
-                        <Button fx:id="chooseDirectoryButton" maxHeight="25.0" maxWidth="140.0" minHeight="25.0" minWidth="75.0" mnemonicParsing="false" onAction="#setDirectory" prefHeight="25.0" prefWidth="100.0" text="Выбрать..." />
-                        <TextField fx:id="downloadPathTextField" maxHeight="25.0" maxWidth="1.7976931348623157E308" minHeight="25.0" minWidth="50.0" prefHeight="25.0" prefWidth="200.0" text="D:\SPOIO" />
-                        <Label fx:id="statusLable" maxHeight="25.0" maxWidth="40.0" minHeight="25.0" minWidth="40.0" prefHeight="25.0" prefWidth="40.0" text="Status:" />
-                        <Label fx:id="statusLabel" maxHeight="25.0" maxWidth="80.0" minHeight="25.0" minWidth="60.0" prefHeight="25.0" prefWidth="80.0" text="Not connected" textFill="RED" />
                         <ProgressIndicator fx:id="progressIndicator" maxHeight="19.0" maxWidth="35.0" minHeight="19.0" minWidth="35.0" prefHeight="19.0" prefWidth="35.0">
                             <HBox.margin>
                                 <Insets top="2.0" />
                             </HBox.margin></ProgressIndicator>
-                        <ProgressBar fx:id="progressBar" maxHeight="19.0" maxWidth="200.0" minHeight="19.0" minWidth="20.0" prefHeight="19.0" prefWidth="150.0" progress="0.0" HBox.hgrow="NEVER">
+                        <ProgressBar fx:id="progressBar" maxHeight="19.0" maxWidth="150.0" minHeight="19.0" minWidth="20.0" prefHeight="19.0" prefWidth="120.0" progress="0.0" HBox.hgrow="NEVER">
                             <HBox.margin>
                                 <Insets top="4.0" />
                             </HBox.margin>
@@ -53,6 +78,9 @@
                                 <Insets right="2.0" />
                             </padding>
                         </ProgressBar>
+                        <Label fx:id="statusLable" maxHeight="25.0" maxWidth="40.0" minHeight="25.0" minWidth="40.0" prefHeight="25.0" prefWidth="40.0" text="Status:" />
+                        <Label fx:id="statusLabel" maxHeight="25.0" maxWidth="500.0" minHeight="25.0" minWidth="90.0" prefHeight="25.0" prefWidth="200.0" text="Not connected" textFill="RED" />
+                  <Button fx:id="hideLogButton" mnemonicParsing="false" onAction="#showHideLog" prefWidth="70.0" text="Hide log" />
                     </children>
                     <VBox.margin>
                         <Insets />

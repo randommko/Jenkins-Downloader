@@ -4,42 +4,32 @@ import javafx.application.Application;
 
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
-import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
 import javafx.scene.image.Image;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.stage.Window;
-
 import javax.imageio.ImageIO;
-import javax.swing.*;
+
 import java.awt.*;
-import java.io.Console;
 import java.io.IOException;
 import java.net.URL;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Timer;
-import java.util.TimerTask;
 
-import static com.sun.javafx.scene.control.skin.Utils.getResource;
+import static sample.AppSettings.loadConfigFile;
 
 
 public class Main extends Application
 {
-    private Stage stage;
-    private boolean flagFirtsMinimaise;
+    private static Stage stage;
+    private static Stage settingsStage, tagSettingsStage;
+    private boolean flagFirstMinimise;
 
     private static java.awt.TrayIcon trayIcon;
     private static final String iconImageLoc
            = "http://nix.mrcur.ru:8080/static/b5ec8aab/images/headshot.png";
+    private static final String settingsImageURL = "image/settings(small).png";
     private Timer notificationTimer = new Timer();
 
     @Override
@@ -47,24 +37,29 @@ public class Main extends Application
     {
         try
         {
-            this.stage = primaryStage;
+            stage = primaryStage;
             Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("sample/main.fxml"));
-
-            primaryStage.setTitle("Jenkins downloader");
-            final int SCENE_WIDTH = 1000;
+            final int SCENE_WIDTH = 1200;
             final int SCENE_HEIGHT = 600;
             Scene scene = new Scene(root, SCENE_WIDTH, SCENE_HEIGHT);
+
+            //AppSettings.loadConfigFile();
+
+            primaryStage.setTitle("Jenkins downloader");
+
             primaryStage.setScene(scene);
 
-            primaryStage.setMaxHeight(600);
-            primaryStage.setMaxWidth(1000);
+            primaryStage.setMaxHeight(SCENE_HEIGHT);
+            primaryStage.setMaxWidth(SCENE_WIDTH + 5);
 
-            primaryStage.setMinWidth(750);
-            primaryStage.setMinHeight(300);
+            primaryStage.setMinHeight(SCENE_HEIGHT);
+            primaryStage.setMinWidth(700 + 5);
 
-            primaryStage.setResizable(true);
+            primaryStage.setResizable(false);
 
             javax.swing.SwingUtilities.invokeLater(this::addAppToTray); //вызываем метод добавления иконки в трей
+
+
 
             stage.setOnCloseRequest(event -> {
                 //System.exit(0);
@@ -74,8 +69,9 @@ public class Main extends Application
             // выключаем автоматическое закрытие приложения если нет активных окон
             Platform.setImplicitExit(false);
 
-            flagFirtsMinimaise = true;
+            flagFirstMinimise = true;
             primaryStage.getIcons().add(new Image(iconImageLoc));
+
             primaryStage.show();
         }
         catch(Exception e)
@@ -87,11 +83,6 @@ public class Main extends Application
     public static void main(String[] args)
     {
         launch(args);
-    }
-
-    public Window getStage()
-    {
-        return stage;
     }
 
     private void addAppToTray() {
@@ -141,8 +132,8 @@ public class Main extends Application
     private void hideShowStage() {  //изменение состояния окна на противоположное
         if (stage != null) {
 
-            if (flagFirtsMinimaise) {
-                flagFirtsMinimaise = false;
+            if (flagFirstMinimise) {
+                flagFirstMinimise = false;
                 trayMessage("Jenkins Downloader is still running!");
             }
 
@@ -163,7 +154,8 @@ public class Main extends Application
             Runnable showMsg = () -> {
                 try {
                     String caption = "Jenkins Downloader";  //заголовок сообщения
-                    trayIcon.displayMessage(caption, text, TrayIcon.MessageType.INFO); //метод отображения сообщения в трее
+                    if (AppSettings.isShowNotifications())
+                        trayIcon.displayMessage(caption, text, TrayIcon.MessageType.INFO); //метод отображения сообщения в трее
                 }
                 catch (Exception e)
                 {
@@ -174,8 +166,87 @@ public class Main extends Application
             threadUpdateStatusOfJobs.start();
     }
 
+    public void openTagSettings()
+    {
+        try {
+
+            Parent settingsRoot = FXMLLoader.load(getClass().getClassLoader().getResource("sample/tagSettings.fxml"));
+            Scene settingsScene = new Scene(settingsRoot, 500, 600);
+
+            tagSettingsStage = new Stage();
+            tagSettingsStage.setTitle("TagSettingsController");
+            tagSettingsStage.initModality(Modality.APPLICATION_MODAL);
+            tagSettingsStage.initOwner(stage);
+
+            tagSettingsStage.getIcons().add(new Image(settingsImageURL));
+
+            tagSettingsStage.setScene(settingsScene);
+
+//            tagSettingsStage.setMaxHeight(600);
+//            tagSettingsStage.setMaxWidth(500);
+//
+//            tagSettingsStage.setMinWidth(600);
+//            tagSettingsStage.setMinHeight(500);
+
+            tagSettingsStage.setResizable(false);
+
+            //settingsStage.setX(this.stage.getX() + 100);
+            //settingsStage.setY(this.stage.getY() + 100);
+
+            tagSettingsStage.show();
+        }
+        catch (Exception e)
+        {
+            System.out.println("(Main) Can't open settings: " + e);
+        }
+    }
+
+    public void openSettings()
+    {
+        try {
+            Parent settingsRoot = FXMLLoader.load(getClass().getClassLoader().getResource("sample/Settings.fxml"));
+            Scene settingsScene = new Scene(settingsRoot, 400, 400);
+
+            settingsStage = new Stage();
+            settingsStage.setTitle("TagSettingsController");
+            settingsStage.initModality(Modality.APPLICATION_MODAL);
+            settingsStage.initOwner(stage);
+
+            settingsStage.getIcons().add(new Image(settingsImageURL));
+
+            settingsStage.setScene(settingsScene);
+
+            settingsStage.setResizable(false);
+
+            //settingsStage.setX(this.stage.getX() + 100);
+            //settingsStage.setY(this.stage.getY() + 100);
+
+            settingsStage.show();
+        }
+        catch (Exception e)
+        {
+            System.out.println("(Main) Can't open settings: " + e);
+        }
+    }
+
+    public static Stage getTagSettingsStage()
+    {
+        return tagSettingsStage;
+    }
+
+    public static Window getStage()
+    {
+        return stage;
+    }
+
+    public static Stage getSettingsStage()
+    {
+        return settingsStage;
+    }
+
     public TrayIcon getTrayIcon ()
     {
         return trayIcon;
     }
+
 }
