@@ -41,7 +41,9 @@ import java.util.concurrent.TimeUnit;
 public class MainController
 {
     @FXML
-    private volatile Label statusLabel, settingsLabel;
+    private volatile Label statusLabel;
+//    @FXML
+//    private volatile Label settingsLabel;
     @FXML
     private TextArea logTextArea;
 
@@ -61,7 +63,7 @@ public class MainController
     private TableView<Job> jobsTable;
 
     @FXML
-    private Button refreshButton, downloadButton, hideLogButton;
+    private Button refreshButton, downloadButton, hideLogButton, settingsButton, helpButton;
     @FXML
     private ProgressIndicator progressIndicator;
     @FXML
@@ -241,34 +243,41 @@ public class MainController
     @FXML
     private void downloadJobButton ()           //Нажатие на кнопку "Download" и начало скачивания в новом потоке
     {
-        Job job = getSelectedJob();
-
-        if (job != null)
+        try
+        {
+            Job job = getSelectedJob();
             startJobDownload(job);
-
+        }
+        catch (NullPointerException e)
+        {
+            writeToLog("Select job to download");
+        }
     }
 
     @FXML
     public void onSettingsClick()   //Открытие настроек
     {
         main.openSettings();
-        Runnable runnable = () -> {
-                    Window settings = main.getSettingsStage();
-                    while (settings.isShowing())
-                    {
-                        try
-                        {
-                            TimeUnit.SECONDS.sleep(1);
-                        }
-                        catch (InterruptedException e)
-                        {
 
-                        }
+        //TODO: проверить, можно ли убрать этот костыль
+        Runnable runnable = () -> {
+                Window settings = main.getSettingsStage();
+                while (settings.isShowing())
+                {
+                    try
+                    {
+                        TimeUnit.SECONDS.sleep(1);
                     }
-                    loadTableConfig();
-                };
-        Thread thread = new Thread(runnable);
+                    catch (InterruptedException e)
+                    {
+
+                    }
+                }
+                loadTableConfig();
+            };
+        Thread thread = new Thread(runnable);   //необходимо для загузрки актуального конфига после закрытия окна настроек
         thread.start();
+
     }
 
     private void initWindow()
@@ -280,7 +289,8 @@ public class MainController
 
         try {
             Image settings = new Image(settingsImageURL);
-            settingsLabel.setGraphic(new ImageView(settings));
+            settingsButton.setGraphic(new ImageView(settings));
+            //settingsLabel.setText("Settings");
         }
         catch (Exception e)
         {
@@ -311,27 +321,6 @@ public class MainController
                     lastChangeCol.setPrefWidth(AppSettings.getWidthColumnTimeLastUpdate());
                 }
         );
-//        Runnable changeTable = () -> {
-////            System.out.println("(MainController) (loadTableConfig) Visible of job name column: " + AppSettings.showColumnJobName());
-////            System.out.println("(MainController) (loadTableConfig) Visible of job ID column: " + AppSettings.showColumnJobID());
-////            System.out.println("(MainController) (loadTableConfig) Visible of job status column: " + AppSettings.showColumnJobStatus());
-////            System.out.println("(MainController) (loadTableConfig) Visible of job isFile column: " + AppSettings.showColumnIsFile());
-////            System.out.println("(MainController) (loadTableConfig) Visible of job tag column: " + AppSettings.showColumnTagName());
-//
-//            jobNameCol.setVisible(AppSettings.showColumnJobName());
-//            IDCol.setVisible(AppSettings.showColumnJobID());
-//            jobStatusCol.setVisible(AppSettings.showColumnJobStatus());
-//            isFileCol.setVisible(AppSettings.showColumnIsFile());
-//            tagCol.setVisible(AppSettings.showColumnTagName());
-//
-//            jobNameCol.setPrefWidth(AppSettings.getWidthColumnJobName());
-//            IDCol.setPrefWidth(AppSettings.getWidthColumnJobID());
-//            jobStatusCol.setPrefWidth(AppSettings.getWidthColumnJobStatus());
-//            isFileCol.setPrefWidth(AppSettings.getWidthColumnIsFile());
-//            tagCol.setPrefWidth(AppSettings.getWidthColumnTagName());
-//        };
-//        Thread tread = new Thread(changeTable);
-//        tread.start();
     }
 
     private void configTable()
@@ -356,6 +345,33 @@ public class MainController
         tagCol.setCellValueFactory(new PropertyValueFactory<>("visibleName"));
         lastChangeCol.setCellValueFactory(new PropertyValueFactory<>("lastChange"));
 
+
+        jobsTable.setRowFactory( tv ->
+        {
+            TableRow<Job> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && (! row.isEmpty()) ) {
+                    Job job = row.getItem();
+                    if (job.isFile())
+                    {
+                        if (job.getJobStatus() != Job.JobStatusListing.Впроцессе)
+                            startJobDownload(job);
+                        else
+                            writeToLog(job.getJobName() + " (#" + job.getJobID() + ")" + " is in processing");
+                    }
+                    else
+                    {
+                        if (job.getJobStatus() != Job.JobStatusListing.Впроцессе)
+                            //startJob(job);
+                            writeToLog("Can't starts jobs. Only downloading!");
+                        else
+                            writeToLog(job.getJobName() + " (#" + job.getJobID() + ")" + " is in processing");
+                    }
+                }
+            });
+            return row ;
+        });
+
         changeColumnWidthListener(jobNameCol);
         changeColumnWidthListener(IDCol);
         changeColumnWidthListener(jobStatusCol);
@@ -366,6 +382,13 @@ public class MainController
         jobsTable.setItems(jobsForMainForm.getListOfJobs());
     }
 
+    private void startJob(Job job)
+    {
+        if (job.getJobStatus() != Job.JobStatusListing.Впроцессе)
+            job.start();
+        else
+            writeToLog("Can't start job. " + job.getJobName() + " (#" + job.getJobID() + ")" + " is in processing");
+    }
 
     private void writeToLog(String text)     //вывод в лог сообщения
     {
@@ -383,20 +406,6 @@ public class MainController
                 }
             }
         );
-//        Platform.runLater( () ->
-//            {
-//                Date date = new Date();
-//                SimpleDateFormat formatForDateNow = new SimpleDateFormat("dd.MM.yy HH:mm:ss");
-//
-//                try {
-//
-//                    logTextArea.setText(formatForDateNow.format(date) + ": " + text + "\n" + logTextArea.getText());
-//
-//                } catch (Exception e) {
-//                    System.out.println("(MainController) Error on write to log: " + e);
-//                }
-//            }
-//        );
     }
 
     public void trayMessage (String text)
@@ -414,18 +423,6 @@ public class MainController
                     }
                 }
         );
-//        Runnable showMsg = () -> {
-//            try {
-//                String caption = "Jenkins Downloader";  //заголовок сообщения
-//                main.getTrayIcon().displayMessage(caption, text, TrayIcon.MessageType.INFO); //метод отображения сообщения в трее
-//            }
-//            catch (Exception e)
-//            {
-//                System.out.println("(MainController) Can't display tray message: " + e);
-//            }
-//        };
-//        Thread threadUpdateStatusOfJobs = new Thread(showMsg);
-//        threadUpdateStatusOfJobs.start();
     }
 
     public void setVisibleProgressBar(boolean status)
@@ -473,7 +470,7 @@ public class MainController
                 writeToLog("Start downloading: " + job.getJobName() + " (#" + job.getJobID() + "), " + formattedSize + "Mb");
             }
 
-            setStatus(ClientStatus.Downloading);
+            setStatus(ClientStatus.Downloading, job);
 
             job.download(file);
 
@@ -555,7 +552,7 @@ public class MainController
         {
             hideLogButton.setText("Hide log");
             logAnchorPane.setVisible(true);
-            main.getStage().setWidth(1100);
+            main.getStage().setWidth(Main.SCENE_WIDTH);
 
             //root.setPrefWidth(1000);
         }
@@ -563,7 +560,7 @@ public class MainController
         {
             hideLogButton.setText("Show log");
             logAnchorPane.setVisible(false);
-            main.getStage().setWidth(705);
+            main.getStage().setWidth(Main.SCENE_WIDTH - 500 + 15);
         }
         hideLog = !hideLog;
     }
@@ -581,32 +578,32 @@ public class MainController
                 case Connecting:
                     lastStatus = actualStatus;
                     actualStatus = ClientStatus.Connecting;
-                    setStatusText("Connecting to " + AppSettings.getServerAddress(), Color.GREEN);
+                    setStatusText("Connecting to \"" + AppSettings.getServerAddress() + "\"", Color.GREEN);
                     progressIndicator.setVisible(true);
                     progressBar.setVisible(false);
                     downloadButton.setDisable(true);
                     refreshButton.setDisable(true);
-                    settingsLabel.setDisable(true);
+                    settingsButton.setDisable(false);    //доступ к настрйокам false - есть, true - нет
                     break;
                 case Connected:
                     lastStatus = actualStatus;
                     actualStatus = ClientStatus.Connected;
-                    setStatusText("Connected to " + AppSettings.getServerAddress(), Color.GREEN);
+                    setStatusText("Connected to \"" + AppSettings.getServerAddress() + "\"", Color.GREEN);
                     progressIndicator.setVisible(false);
                     progressBar.setVisible(false);
                     downloadButton.setDisable(false);
                     refreshButton.setDisable(false);
-                    settingsLabel.setDisable(false);    //доступ к настрйокам false - есть, true - нет
+                    settingsButton.setDisable(false);    //доступ к настрйокам false - есть, true - нет
                     break;
                 case Updating:
                     lastStatus = actualStatus;
                     actualStatus = ClientStatus.Updating;
-                    setStatusText("Updating job list from " + AppSettings.getServerAddress(), Color.GREEN);
+                    setStatusText("Getting job list from \"" + AppSettings.getServerAddress() + "\"", Color.GREEN);
                     progressIndicator.setVisible(true);
                     progressBar.setVisible(false);
                     downloadButton.setDisable(true);
                     refreshButton.setDisable(true);
-                    settingsLabel.setDisable(true);
+                    settingsButton.setDisable(false);    //доступ к настрйокам false - есть, true - нет
                     break;
                 case Extracting:
                     lastStatus = actualStatus;
@@ -616,7 +613,7 @@ public class MainController
                     progressBar.setVisible(false);
                     downloadButton.setDisable(true);
                     refreshButton.setDisable(true);
-                    settingsLabel.setDisable(true);
+                    settingsButton.setDisable(false);    //доступ к настрйокам false - есть, true - нет
                     break;
                 case Downloading:
                     lastStatus = actualStatus;
@@ -626,18 +623,18 @@ public class MainController
                     progressBar.setVisible(true);
                     downloadButton.setDisable(true);
                     refreshButton.setDisable(true);
-                    settingsLabel.setDisable(true);
+                    settingsButton.setDisable(false);    //доступ к настрйокам false - есть, true - нет
                     break;
                 case Disconnected:
                     lastStatus = actualStatus;
                     actualStatus = ClientStatus.Disconnected;
                     progressIndicator.setVisible(true);
                     progressBar.setVisible(false);
-                    setStatusText("Can't find jenkins server on " + AppSettings.getServerAddress(), Color.RED);
+                    setStatusText("Can't find jenkins server on \"" + AppSettings.getServerAddress() + "\"", Color.RED);
                     progressIndicator.setVisible(false);
                     downloadButton.setDisable(false);
                     refreshButton.setDisable(false);
-                    settingsLabel.setDisable(false); //доступ к настрйокам false - есть, true - нет
+                    settingsButton.setDisable(false); //доступ к настрйокам false - есть, true - нет
                     break;
                 default:
                     lastStatus = actualStatus;
@@ -648,7 +645,98 @@ public class MainController
                     progressIndicator.setVisible(false);
                     refreshButton.setDisable(true);
                     downloadButton.setDisable(true);
-                    settingsLabel.setDisable(true);
+                    settingsButton.setDisable(false);    //доступ к настрйокам false - есть, true - нет
+                    break;
+            }
+        }
+        catch (Exception e)
+        {
+            System.out.println("(MainController) Error on change status: " + e);
+        }
+
+    }
+
+    private void setStatus (ClientStatus status, Job job)    //установка статуса клиента (приложения)
+    {
+
+        try
+        {
+            switch (status)
+            {
+                case _lastStatus:
+                    actualStatus = lastStatus;
+                    break;
+                case Connecting:
+                    lastStatus = actualStatus;
+                    actualStatus = ClientStatus.Connecting;
+                    setStatusText("Connecting to \"" + AppSettings.getServerAddress() + "\"", Color.GREEN);
+                    progressIndicator.setVisible(true);
+                    progressBar.setVisible(false);
+                    downloadButton.setDisable(true);
+                    refreshButton.setDisable(true);
+                    settingsButton.setDisable(false);   //доступ к настрйокам false - есть, true - нет
+                    break;
+                case Connected:
+                    lastStatus = actualStatus;
+                    actualStatus = ClientStatus.Connected;
+                    setStatusText("Connected to \"" + AppSettings.getServerAddress()+ "\"", Color.GREEN);
+                    progressIndicator.setVisible(false);
+                    progressBar.setVisible(false);
+                    downloadButton.setDisable(false);
+                    refreshButton.setDisable(false);
+                    settingsButton.setDisable(false);    //доступ к настрйокам false - есть, true - нет
+                    break;
+                case Updating:
+                    lastStatus = actualStatus;
+                    actualStatus = ClientStatus.Updating;
+                    setStatusText("Getting job list from \"" + AppSettings.getServerAddress() + "\"", Color.GREEN);
+                    progressIndicator.setVisible(true);
+                    progressBar.setVisible(false);
+                    downloadButton.setDisable(true);
+                    refreshButton.setDisable(true);
+                    settingsButton.setDisable(false);   //доступ к настрйокам false - есть, true - нет
+                    break;
+                case Extracting:
+                    lastStatus = actualStatus;
+                    actualStatus = ClientStatus.Extracting;
+                    setStatusText("Extracting " + job.getJobName() + " (#" + job.getJobID() + ") in \"" + AppSettings.getSavePath() + "\\" + job.getJobName() + "\"", Color.GREEN);
+                    progressIndicator.setVisible(true);
+                    progressBar.setVisible(false);
+                    downloadButton.setDisable(true);
+                    refreshButton.setDisable(true);
+                    settingsButton.setDisable(false);   //доступ к настрйокам false - есть, true - нет
+                    break;
+                case Downloading:
+                    lastStatus = actualStatus;
+                    actualStatus = ClientStatus.Downloading;
+                    setStatusText("Downloading \"" + job.getJobName() + " (#" + job.getJobID() + ")\" in \"" + AppSettings.getSavePath() + "\\" + job.getJobName() + "\\" + job.getJobID() + ".zip\"", Color.GREEN);
+                    progressIndicator.setVisible(true);
+                    progressBar.setVisible(true);
+                    downloadButton.setDisable(true);
+                    refreshButton.setDisable(true);
+                    settingsButton.setDisable(false);   //доступ к настрйокам false - есть, true - нет
+                    break;
+                case Disconnected:
+                    lastStatus = actualStatus;
+                    actualStatus = ClientStatus.Disconnected;
+                    progressIndicator.setVisible(true);
+                    progressBar.setVisible(false);
+                    setStatusText("Can't find jenkins server on \"" + AppSettings.getServerAddress() + "\"", Color.RED);
+                    progressIndicator.setVisible(false);
+                    downloadButton.setDisable(false);
+                    refreshButton.setDisable(false);
+                    settingsButton.setDisable(false); //доступ к настрйокам false - есть, true - нет
+                    break;
+                default:
+                    lastStatus = actualStatus;
+                    actualStatus = ClientStatus.Disconnected;
+                    progressIndicator.setVisible(true);
+                    progressBar.setVisible(false);
+                    setStatusText("Status error", Color.RED);
+                    progressIndicator.setVisible(false);
+                    refreshButton.setDisable(true);
+                    downloadButton.setDisable(true);
+                    settingsButton.setDisable(false);   //доступ к настрйокам false - есть, true - нет
                     break;
             }
         }
@@ -694,4 +782,11 @@ public class MainController
             }
         });
     }
+
+    @FXML
+    private void helpButtonClick()
+    {
+        main.openHelp();
+    }
+
 }

@@ -22,8 +22,8 @@
                <children>
                   <TableView fx:id="jobsTable" editable="true" prefHeight="550.0" HBox.hgrow="ALWAYS">
                     <columns>
-                      <TableColumn fx:id="jobNameColumn" editable="false" maxWidth="1.7976931348623157E308" prefWidth="300.0" resizable="false" text="Имя" />
-                      <TableColumn fx:id="jobTagColumn" editable="true" maxWidth="275.0" prefWidth="280.0" resizable="false" text="Отображаемое имя" />
+                      <TableColumn fx:id="jobNameColumn" editable="false" maxWidth="1.7976931348623157E308" prefWidth="300.0" text="Имя" />
+                      <TableColumn fx:id="jobTagColumn" editable="true" maxWidth="1.7976931348623157E308" prefWidth="500.0" text="Отображаемое имя" />
                     </columns>
                   </TableView>
                </children></HBox>

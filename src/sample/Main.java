@@ -17,19 +17,25 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Timer;
 
-import static sample.AppSettings.loadConfigFile;
 
 
 public class Main extends Application
 {
+    public static final int SCENE_WIDTH = 1200;
+    public static final int SCENE_HEIGHT = 600;
+
+    public static final int TAG_SCENE_WIDTH = 800;
+    public static final int TAG_SCENE_HEIGHT = 400;
+
     private static Stage stage;
-    private static Stage settingsStage, tagSettingsStage;
+    private static Stage settingsStage, tagSettingsStage, helpStage;
     private boolean flagFirstMinimise;
 
     private static java.awt.TrayIcon trayIcon;
     private static final String iconImageLoc
            = "http://nix.mrcur.ru:8080/static/b5ec8aab/images/headshot.png";
     private static final String settingsImageURL = "image/settings(small).png";
+    private static final String helpImageURL = "image/help.png";
     private Timer notificationTimer = new Timer();
 
     @Override
@@ -39,11 +45,10 @@ public class Main extends Application
         {
             stage = primaryStage;
             Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("sample/main.fxml"));
-            final int SCENE_WIDTH = 1200;
-            final int SCENE_HEIGHT = 600;
+
             Scene scene = new Scene(root, SCENE_WIDTH, SCENE_HEIGHT);
 
-            //AppSettings.loadConfigFile();
+            //scene.getStylesheets().add(settingsCSS);
 
             primaryStage.setTitle("Jenkins downloader");
 
@@ -53,16 +58,13 @@ public class Main extends Application
             primaryStage.setMaxWidth(SCENE_WIDTH + 5);
 
             primaryStage.setMinHeight(SCENE_HEIGHT);
-            primaryStage.setMinWidth(700 + 5);
+            primaryStage.setMinWidth(SCENE_WIDTH - 500 + 5);
 
             primaryStage.setResizable(false);
 
             javax.swing.SwingUtilities.invokeLater(this::addAppToTray); //вызываем метод добавления иконки в трей
 
-
-
             stage.setOnCloseRequest(event -> {
-                //System.exit(0);
                 hideShowStage();   //по нажатию на крестик приложение сворачивается в трей
             });
 
@@ -166,12 +168,12 @@ public class Main extends Application
             threadUpdateStatusOfJobs.start();
     }
 
-    public void openTagSettings()
+    public void openTagSettings()   //открите настроек тэгов
     {
         try {
 
             Parent settingsRoot = FXMLLoader.load(getClass().getClassLoader().getResource("sample/tagSettings.fxml"));
-            Scene settingsScene = new Scene(settingsRoot, 500, 600);
+            Scene settingsScene = new Scene(settingsRoot, TAG_SCENE_WIDTH, TAG_SCENE_HEIGHT);
 
             tagSettingsStage = new Stage();
             tagSettingsStage.setTitle("TagSettingsController");
@@ -182,16 +184,16 @@ public class Main extends Application
 
             tagSettingsStage.setScene(settingsScene);
 
-//            tagSettingsStage.setMaxHeight(600);
-//            tagSettingsStage.setMaxWidth(500);
-//
-//            tagSettingsStage.setMinWidth(600);
-//            tagSettingsStage.setMinHeight(500);
+            tagSettingsStage.setMaxHeight(TAG_SCENE_HEIGHT);
+            tagSettingsStage.setMaxWidth(TAG_SCENE_WIDTH + 300);
 
-            tagSettingsStage.setResizable(false);
+            tagSettingsStage.setMinHeight(TAG_SCENE_HEIGHT - 200);
+            tagSettingsStage.setMinWidth(TAG_SCENE_WIDTH - 300);
 
-            //settingsStage.setX(this.stage.getX() + 100);
-            //settingsStage.setY(this.stage.getY() + 100);
+            tagSettingsStage.setResizable(true);
+
+//            settingsStage.setX(this.stage.getX() + 100);
+//            settingsStage.setY(this.stage.getY() + 100);
 
             tagSettingsStage.show();
         }
@@ -201,7 +203,7 @@ public class Main extends Application
         }
     }
 
-    public void openSettings()
+    public void openSettings()  //открытие настроек
     {
         try {
             Parent settingsRoot = FXMLLoader.load(getClass().getClassLoader().getResource("sample/Settings.fxml"));
@@ -228,6 +230,33 @@ public class Main extends Application
             System.out.println("(Main) Can't open settings: " + e);
         }
     }
+
+    public void openHelp()  //открытие help'a
+    {
+        try {
+            Parent helpRoot = FXMLLoader.load(getClass().getClassLoader().getResource("sample/help.fxml"));
+            Scene helpScene = new Scene(helpRoot, 800, 400);
+
+            helpStage = new Stage();
+            helpStage.setTitle("Help");
+            helpStage.initModality(Modality.NONE);
+            helpStage.initOwner(stage);
+
+            helpStage.getIcons().add(new Image(helpImageURL));
+
+            helpStage.setScene(helpScene);
+
+            helpStage.setResizable(false);
+
+            helpStage.show();
+        }
+        catch (Exception e)
+        {
+            System.out.println("(Main) Can't open settings: " + e);
+        }
+    }
+
+    public static Stage getHelpStage() { return helpStage;}
 
     public static Stage getTagSettingsStage()
     {

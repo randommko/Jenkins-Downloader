@@ -47,7 +47,7 @@
                            </VBox.margin>
                         </Button>
                         <Separator prefWidth="200.0" />
-                        <Label prefHeight="25.0" prefWidth="400.0" text="Visible columns:">
+                        <Label prefHeight="25.0" prefWidth="400.0" text="Show columns:">
                            <VBox.margin>
                               <Insets left="5.0" />
                            </VBox.margin></Label>

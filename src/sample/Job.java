@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -19,7 +20,7 @@ public class Job {
     private String visibleName; //отображемое имя (необязательно)
     private int jobID;          //номер последней сборки
     private String jobName ;    //имя джобы
-    private URL jobURL;         //ссылка на скачивание последнего успешного билда
+    private URL jobURL;         // serverAddress + /view/actual/job/ + jobName + /lastSuccessfulBuild/artifact/*zip*/archive.zip
     private JobStatusListing jobStatus; //статус последней сборки
     private boolean isFile;
     private String lastChange;
@@ -35,7 +36,7 @@ public class Job {
 //        SimpleDateFormat formatForDateNow = new SimpleDateFormat("dd.MM.yy HH:mm:ss");
 //        Date date = new Date();
 //        this.lastChange     = formatForDateNow.format(date);
-        this.lastChange     = "Unknown";
+        this.lastChange     = "-";
     }
 
     public Job (Job job)
@@ -94,6 +95,7 @@ public class Job {
         SimpleDateFormat formatForDateNow = new SimpleDateFormat("dd.MM.yy HH:mm:ss");
         Date date = new Date();
         this.lastChange     = formatForDateNow.format(date);
+        AppSettings.changeSettingInConfig(jobName + "_time", this.lastChange);  //запись в конфиг времени последнего изменения
     }
 
     public void setJobName(String jobName) {
@@ -108,7 +110,8 @@ public class Job {
         this.jobStatus = jobStatus;
         SimpleDateFormat formatForDateNow = new SimpleDateFormat("dd.MM.yy HH:mm:ss");
         Date date = new Date();
-        this.lastChange     = formatForDateNow.format(date);
+        this.lastChange = formatForDateNow.format(date);
+        AppSettings.changeSettingInConfig(jobName + "_time", this.lastChange);  //запись в конфиг времени последнего изменения
     }
 
     public void setLastChange(String lastChange) {
@@ -135,6 +138,25 @@ public class Job {
         catch (IOException e) {
             System.out.println("Ошибка: " + e);
         }
+    }
+
+    public void start()
+    {
+        try
+        {
+            URL url = new URL(AppSettings.getServerAddress() + "/job/" + this.jobName + "/build?delay=0sec");
+            url.getContent();
+        }
+        catch (MalformedURLException e)
+        {
+            System.out.println("Malformed URL exception: " + e);
+
+        }
+        catch (IOException err)
+        {
+            System.out.println("URL IO Exception: " + err);
+        }
+
     }
 
     private void unzip(File file)

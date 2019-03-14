@@ -1,8 +1,6 @@
 package sample;
 
 
-import javafx.beans.property.ReadOnlyDoubleProperty;
-import javafx.event.ActionEvent;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -121,11 +119,7 @@ public class AppSettings
     public static String findTagInConfigFile(String nameOfJob)
     {
         String out = "";
-
-
         File configFile = new File(FILE_CONFIG_NAME);
-
-        //System.out.println("(AppSettings) (findTagInConfigFile) file: " + configFile.getAbsolutePath());
 
         if (!configFile.exists())
             createConfigFile(configFile);
@@ -141,11 +135,7 @@ public class AppSettings
                 try {
                     FileInputStream input = new FileInputStream(configFile);
                     properties = new Properties();
-
                     properties.load(new InputStreamReader(input));  //  properties.load(new InputStreamReader(input, Charset.forName("UTF-8")))
-
-                    //System.out.println("(AppSettings) (findTagInConfigFile) Name of job: " + properties.getProperty(nameOfJob));
-
                     out = properties.getProperty(nameOfJob);
                 } catch (Exception e) {
                     System.out.println("(AppSettings) (findTagInConfigFile) error on finding job: " + e);
@@ -163,9 +153,45 @@ public class AppSettings
         return out;
     }
 
+    public static String findTimeInConfigFile(String nameOfJob)
+    {
+        String out = "";
+        File configFile = new File(FILE_CONFIG_NAME);
+
+        if (!configFile.exists())
+            createConfigFile(configFile);
+
+        switch (CONFIG_FLAG) {
+            case "JSON":
+
+                break;
+            case "XML":
+
+                break;
+            case "SIMPLE":
+                try {
+                    FileInputStream input = new FileInputStream(configFile);
+                    properties = new Properties();
+                    properties.load(new InputStreamReader(input));  //  properties.load(new InputStreamReader(input, Charset.forName("UTF-8")))
+                    out = properties.getProperty(nameOfJob + "_time");
+                } catch (Exception e) {
+                    System.out.println("(AppSettings) (findTimeInConfigFile) error on finding job: " + e);
+                }
+                break;
+            default:
+                out = "";
+                System.out.println("(AppSettings) (findTimeInConfigFile) File not found");
+                break;
+        }
+
+        if (out == null)
+            out = "";
+
+        return out;
+    }
+
     public static void changeSettingInConfig(String changeSetting, String newValue)
     {
-        //changeSetting(changeSetting, newValue);
         newValue = changeSetting + "\t\t" + newValue;
         newValue = newValue.replace("\\", "\\\\");
 
@@ -191,7 +217,7 @@ public class AppSettings
 
             String currentLine;
             boolean flag = true;
-            //System.out.println("(AppSettings) (changeSettingInConfig) New string to config file: " + newValue);
+
             while((currentLine = bufferedReader.readLine()) != null)
             {
                 if(currentLine.trim().lastIndexOf(changeSetting) > -1) {
@@ -207,18 +233,15 @@ public class AppSettings
 
             bufferedWriter.close();
             bufferedReader.close();
-            tempFile.delete();
+            System.out.println("(AppSettings) (changeSettingInConfig) temp file delete:" + tempFile.delete());
         }
         catch (Exception e)
         {
             System.out.println("(AppSettings) (changeSettingInConfig) Error: " + e);
         }
-
-
-        //System.out.println("(AppSettings) (changeSettingInConfig) temp file deleted: " + tempFile.delete());
     }
 
-    public static void createConfigFile(File file)    //если конфигурационный файл не найден, то создаем новый с настрйоками по умолчанию
+    private static void createConfigFile(File file)    //если конфигурационный файл не найден, то создаем новый с настрйоками по умолчанию
     {
         System.out.println("(AppSettings) (createConfigFile) Config file not found");
 
@@ -228,7 +251,7 @@ public class AppSettings
 
                     FileWriter writer =  new FileWriter(new File(FILE_CONFIG_NAME));
 
-                    writer.write("serverAddress\thttp://nix.mrcur.ru:8080\n");
+                    writer.write("serverAddress\thttp://[address]:[port]\n");
                     writer.write("path\t\t\tD:\\\\СПО ИО РС МКС\\\\!!Клиент\n\n");
 
                     writer.write("showNotifications\t\t\ttrue\n");
@@ -263,19 +286,6 @@ public class AppSettings
                     if (file.createNewFile()) {
                         FileWriter writer =  new FileWriter(new File(FILE_CONFIG_NAME));
 
-                        writer.write("{\n");
-                        writer.write("\t\"serverAddress\" : \"http://nix.mrcur.ru:8080\",\n");
-                        writer.write("\t\"path\" : \"D:\\СПО ИО РС МКС\\!!Клиент\",\n");
-                        writer.write("\t\"jobs\":\n");
-                        writer.write("\t[\n");
-                        writer.write("\t\t\"job\":\n");
-                        writer.write("\t\t{\n");
-                        writer.write("\t\t\t\"jobName\" : \"1\",\n");
-                        writer.write("\t\t\t\"tag\" : \"Test\"\n");
-                        writer.write("\t\t}\n");
-                        writer.write("\t]\n");
-                        writer.write("}");
-
                         writer.close();
                     }
                 }
@@ -289,20 +299,12 @@ public class AppSettings
                     if (file.createNewFile()) {
                         FileWriter writer =  new FileWriter(new File(FILE_CONFIG_NAME));
 
-                        writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-                        writer.write("<Config>\n");
-                        writer.write("\t<settings serv.addr=\"http://nix.mrcur.ru:8080\" path=\"D:\\SPOIO\" />\n");
-                        writer.write("\t<jobs>\n");
-                        writer.write("\t\t<job name=\"1\" tag=\"Test\" />\n");
-                        writer.write("\t</jobs>\n");
-                        writer.write("</Config>");
-
                         writer.close();
                     }
                 }
                 catch (IOException err)
                 {
-                    System.out.println("(v) (createConfigFile) Can't create config file: " + err);
+                    System.out.println("(AppSettings) (createConfigFile) Can't create config file: " + err);
                 }
                 break;
             default:
@@ -311,6 +313,8 @@ public class AppSettings
         }
     }
 
+
+//-----------------------------------
     public static String getSavePath() {
         return savePath;
     }
@@ -319,6 +323,8 @@ public class AppSettings
         return serverAddress;
     }
 
+
+//-----------------------------------
     public static void setSavePath(String savePath) {
         AppSettings.savePath = savePath;
         changeSettingInConfig("path", AppSettings.savePath);
@@ -329,6 +335,8 @@ public class AppSettings
         changeSettingInConfig("serverAddress", AppSettings.serverAddress);
     }
 
+
+//-----------------------------------
     public static boolean showColumnIsFile() {
         return showColumnIsFile;
     }
@@ -366,20 +374,12 @@ public class AppSettings
         return autoUpdate;
     }
 
-    public static void setAutoUpdate(boolean autoUpdate) {
-        AppSettings.autoUpdate = autoUpdate;
-        changeSettingInConfig("autoUpdate", String.valueOf(AppSettings.autoUpdate));
-    }
-
-    public static void setShowNotifications(boolean showNotifications) {
-        AppSettings.showNotifications = showNotifications;
-        changeSettingInConfig("showNotifications", String.valueOf(AppSettings.showNotifications));
-    }
-
     public static boolean isShowNotifications() {
         return showNotifications;
     }
 
+
+//-----------------------------------
     public static void setShowColumnIsFile(boolean showColumnIsFile) {
         AppSettings.showColumnIsFile = showColumnIsFile;
         changeSettingInConfig("showColumnIsFile", String.valueOf(AppSettings.showColumnIsFile));
@@ -405,12 +405,23 @@ public class AppSettings
         changeSettingInConfig("showColumnTagName", String.valueOf(AppSettings.showColumnTagName));
     }
 
-    public static void setShowColTimeLastUpdate(boolean showColTimeLastUpdate)
-    {
+    public static void setShowColTimeLastUpdate(boolean showColTimeLastUpdate) {
         AppSettings.showColTimeLastUpdate = showColTimeLastUpdate;
         changeSettingInConfig("showColTimeLastUpdate", String.valueOf(AppSettings.showColTimeLastUpdate));
     }
 
+    public static void setAutoUpdate(boolean autoUpdate) {
+        AppSettings.autoUpdate = autoUpdate;
+        changeSettingInConfig("autoUpdate", String.valueOf(AppSettings.autoUpdate));
+    }
+
+    public static void setShowNotifications(boolean showNotifications) {
+        AppSettings.showNotifications = showNotifications;
+        changeSettingInConfig("showNotifications", String.valueOf(AppSettings.showNotifications));
+    }
+
+
+//-----------------------------------
     public static int getWidthColumnIsFile() {
         return widthColumnIsFile;
     }

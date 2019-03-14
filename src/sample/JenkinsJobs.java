@@ -16,6 +16,7 @@ import java.util.Date;
 import java.util.Iterator;
 
 import static sample.AppSettings.findTagInConfigFile;
+import static sample.AppSettings.findTimeInConfigFile;
 
 public class JenkinsJobs
 {
@@ -86,18 +87,30 @@ public class JenkinsJobs
                 inputstream = url.openStream(); //пробуем открыть сформированную ссылку, если не получится то мы сразу попадаем в блок catch, иначе выполнение кода продолжится дальше и мы добавим работу в наш список
                 job = new Job(jobName, jobID, url, true, getJobStatusFromServer(element));  //создаем новую джобу с полученым с сервера именем, добавляем джобу в список и увеличиваем счетчик
                 inputstream.close();
-                if ( !(findTagInConfigFile(jobName)).equals(""))
-                    job.setVisibleName(findTagInConfigFile(jobName));
+                if ( !(findTagInConfigFile(jobName)).equals("")) {
+                    job.setVisibleName(findTagInConfigFile(jobName));   //ищем в конфиг-файле тэг для найденой работы
+                    job.setLastChange(findTimeInConfigFile(jobName));   //ищем в конфиг файле время последнего изменения для найденой работы
+                }
             }
             catch (FileNotFoundException e) {
+                System.out.println("(Jenkins jobs) (getJobListFromServer) File not found error: " + e);
                 job = new Job(jobName, jobID, url, false, getJobStatusFromServer(element));
-                if ( !(findTagInConfigFile(jobName)).equals(""))
+                if ( !(findTagInConfigFile(jobName)).equals("")) {
                     job.setVisibleName(findTagInConfigFile(jobName));
+                }
+                if ( !(findTimeInConfigFile(jobName)).equals("")) {
+                    job.setLastChange(findTimeInConfigFile(jobName));
+                }
             }
             catch (Exception e) {
+                System.out.println("(Jenkins jobs) (getJobListFromServer) Unknown error: " + e);
                 job = new Job(jobName, jobID, url, false, getJobStatusFromServer(element));
-                if ( !(findTagInConfigFile(jobName)).equals(""))
+                if ( !(findTagInConfigFile(jobName)).equals("")) {
                     job.setVisibleName(findTagInConfigFile(jobName));
+                }
+                if ( !(findTimeInConfigFile(jobName)).equals("")) {
+                    job.setLastChange(findTimeInConfigFile(jobName));
+                }
             }
             addJob(job);
             //mainController.addNewSettingToFile(job.getJobName(), job.getVisibleName());
