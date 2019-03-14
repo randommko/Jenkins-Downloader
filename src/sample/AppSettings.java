@@ -252,7 +252,7 @@ public class AppSettings
                     FileWriter writer =  new FileWriter(new File(FILE_CONFIG_NAME));
 
                     writer.write("serverAddress\thttp://[address]:[port]\n");
-                    writer.write("path\t\t\tD:\\\\СПО ИО РС МКС\\\\!!Клиент\n\n");
+                    writer.write("path\t\t\tD:\\\\Jenkins\n\n");
 
                     writer.write("showNotifications\t\t\ttrue\n");
                     writer.write("showAllJobs\t\t\tfalse\n");
