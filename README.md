@@ -1,6 +1,4 @@
 # Jenkins-Downloader
-Jenkins downloader was created in proccess of learnig java. 
-
 
 Основные возможности:
 - получение списка работ с сервера Jenkins по заданному в настройках адресу;
