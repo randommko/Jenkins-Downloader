@@ -7,7 +7,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
-import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javax.imageio.ImageIO;
@@ -24,18 +23,12 @@ public class Main extends Application
     public static final int SCENE_WIDTH = 1200;
     public static final int SCENE_HEIGHT = 600;
 
-    public static final int TAG_SCENE_WIDTH = 800;
-    public static final int TAG_SCENE_HEIGHT = 400;
-
     private static Stage stage;
-    private static Stage settingsStage, tagSettingsStage, helpStage;
     private boolean flagFirstMinimise;
 
     private static java.awt.TrayIcon trayIcon;
     private static final String iconImageLoc
            = "http://nix.mrcur.ru:8080/static/b5ec8aab/images/headshot.png";
-    private static final String settingsImageURL = "image/settings(small).png";
-    private static final String helpImageURL = "image/help.png";
     private Timer notificationTimer = new Timer();
 
     @Override
@@ -47,8 +40,6 @@ public class Main extends Application
             Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("sample/main.fxml"));
 
             Scene scene = new Scene(root, SCENE_WIDTH, SCENE_HEIGHT);
-
-            //scene.getStylesheets().add(settingsCSS);
 
             primaryStage.setTitle("Jenkins downloader");
 
@@ -140,11 +131,9 @@ public class Main extends Application
             }
 
             if (stage.isShowing()) {
-                //System.out.println("Stage hide");
                 stage.hide();
             }
             else {
-                //System.out.println("Stage show");
                 stage.show();
                 stage.toFront();
             }
@@ -168,110 +157,11 @@ public class Main extends Application
             threadUpdateStatusOfJobs.start();
     }
 
-    public void openTagSettings()   //открите настроек тэгов
-    {
-        try {
-
-            Parent settingsRoot = FXMLLoader.load(getClass().getClassLoader().getResource("sample/tagSettings.fxml"));
-            Scene settingsScene = new Scene(settingsRoot, TAG_SCENE_WIDTH, TAG_SCENE_HEIGHT);
-
-            tagSettingsStage = new Stage();
-            tagSettingsStage.setTitle("TagSettingsController");
-            tagSettingsStage.initModality(Modality.APPLICATION_MODAL);
-            tagSettingsStage.initOwner(stage);
-
-            tagSettingsStage.getIcons().add(new Image(settingsImageURL));
-
-            tagSettingsStage.setScene(settingsScene);
-
-            tagSettingsStage.setMaxHeight(TAG_SCENE_HEIGHT);
-            tagSettingsStage.setMaxWidth(TAG_SCENE_WIDTH + 300);
-
-            tagSettingsStage.setMinHeight(TAG_SCENE_HEIGHT - 200);
-            tagSettingsStage.setMinWidth(TAG_SCENE_WIDTH - 300);
-
-            tagSettingsStage.setResizable(true);
-
-//            settingsStage.setX(this.stage.getX() + 100);
-//            settingsStage.setY(this.stage.getY() + 100);
-
-            tagSettingsStage.show();
-        }
-        catch (Exception e)
-        {
-            System.out.println("(Main) Can't open settings: " + e);
-        }
-    }
-
-    public void openSettings()  //открытие настроек
-    {
-        try {
-            Parent settingsRoot = FXMLLoader.load(getClass().getClassLoader().getResource("sample/Settings.fxml"));
-            Scene settingsScene = new Scene(settingsRoot, 400, 400);
-
-            settingsStage = new Stage();
-            settingsStage.setTitle("TagSettingsController");
-            settingsStage.initModality(Modality.APPLICATION_MODAL);
-            settingsStage.initOwner(stage);
-
-            settingsStage.getIcons().add(new Image(settingsImageURL));
-
-            settingsStage.setScene(settingsScene);
-
-            settingsStage.setResizable(false);
-
-            //settingsStage.setX(this.stage.getX() + 100);
-            //settingsStage.setY(this.stage.getY() + 100);
-
-            settingsStage.show();
-        }
-        catch (Exception e)
-        {
-            System.out.println("(Main) Can't open settings: " + e);
-        }
-    }
-
-    public void openHelp()  //открытие help'a
-    {
-        try {
-            Parent helpRoot = FXMLLoader.load(getClass().getClassLoader().getResource("sample/help.fxml"));
-            Scene helpScene = new Scene(helpRoot, 800, 400);
-
-            helpStage = new Stage();
-            helpStage.setTitle("Help");
-            helpStage.initModality(Modality.NONE);
-            helpStage.initOwner(stage);
-
-            helpStage.getIcons().add(new Image(helpImageURL));
-
-            helpStage.setScene(helpScene);
-
-            helpStage.setResizable(false);
-
-            helpStage.show();
-        }
-        catch (Exception e)
-        {
-            System.out.println("(Main) Can't open settings: " + e);
-        }
-    }
-
-    public static Stage getHelpStage() { return helpStage;}
-
-    public static Stage getTagSettingsStage()
-    {
-        return tagSettingsStage;
-    }
-
     public static Window getStage()
     {
         return stage;
     }
 
-    public static Stage getSettingsStage()
-    {
-        return settingsStage;
-    }
 
     public TrayIcon getTrayIcon ()
     {

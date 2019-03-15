@@ -5,7 +5,6 @@ import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
 
 public class HelpController {
-    private Main main;
 
     @FXML
     private TextArea helpTextArea;
@@ -32,7 +31,7 @@ public class HelpController {
     @FXML
     private  void closeButtonClick()
     {
-        Stage mainStage = main.getHelpStage();
+        Stage mainStage = MainController.getHelpStage();
         mainStage.close();
     }
 

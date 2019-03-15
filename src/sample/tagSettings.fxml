@@ -13,12 +13,12 @@
    <children>
       <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
-            <HBox prefHeight="25.0" VBox.vgrow="ALWAYS">
+            <HBox maxHeight="25.0" minHeight="25.0" prefHeight="25.0" VBox.vgrow="ALWAYS">
                <children>
-                  <Label alignment="CENTER" maxWidth="1.7976931348623157E308" prefHeight="25.0" text="Список найденых работ" textAlignment="CENTER" HBox.hgrow="ALWAYS" />
+                  <Label alignment="CENTER" maxHeight="25.0" maxWidth="1.7976931348623157E308" minHeight="25.0" prefHeight="25.0" text="Список найденых работ" textAlignment="CENTER" HBox.hgrow="ALWAYS" />
                </children>
             </HBox>
-            <HBox prefHeight="550.0">
+            <HBox>
                <children>
                   <TableView fx:id="jobsTable" editable="true" prefHeight="550.0" HBox.hgrow="ALWAYS">
                     <columns>
@@ -27,13 +27,13 @@
                     </columns>
                   </TableView>
                </children></HBox>
-            <HBox prefHeight="25.0" VBox.vgrow="ALWAYS">
+            <HBox maxHeight="25.0" minHeight="25.0" prefHeight="25.0" VBox.vgrow="ALWAYS">
                <children>
-                  <Button fx:id="saveButton" mnemonicParsing="false" onAction="#saveButton" prefWidth="60.0" text="Save">
+                  <Button fx:id="saveButton" maxHeight="25.0" minHeight="25.0" mnemonicParsing="false" onAction="#saveButton" prefHeight="25.0" prefWidth="60.0" text="Save">
                      <HBox.margin>
                         <Insets />
                      </HBox.margin></Button>
-                  <Button fx:id="cancelButton" mnemonicParsing="false" onAction="#cancelButton" prefWidth="60.0" text="Cancel" />
+                  <Button fx:id="cancelButton" maxHeight="25.0" minHeight="25.0" mnemonicParsing="false" onAction="#cancelButton" prefHeight="25.0" prefWidth="60.0" text="Cancel" />
                </children>
             </HBox>
          </children></VBox>

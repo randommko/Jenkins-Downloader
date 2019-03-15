@@ -2,36 +2,30 @@ package sample;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import java.io.*;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 
-import static sample.AppSettings.findTagInConfigFile;
-import static sample.AppSettings.findTimeInConfigFile;
 
 public class JenkinsJobs
 {
     private ObservableList<Job> ListOfJobs = FXCollections.observableArrayList ();
-    private MainController mainController;
-
-
-    public JenkinsJobs()
-    {
-        mainController = new MainController();
-    }
 
     public void clear()
     {
         this.ListOfJobs.clear();
+    }
+
+    public JenkinsJobs()
+    {
+
     }
 
     public JenkinsJobs(JenkinsJobs jobs)    //конструткор копирования
@@ -52,70 +46,36 @@ public class JenkinsJobs
         return new JenkinsJobs(inputJobs);
     }
 
-    public void addJob(Job job)    //порядковый номер (полученный при поиске), имя, ИД, ссылка для скачивания
+    private Iterator getJobsIterator(String serverAddress)
     {
-        ListOfJobs.add(job);
+        try
+        {
+            Document document = Jsoup.connect(serverAddress).get(); //получаем копию страницы в виде документа
+            Elements elements = document.select("tr[class*=job-status]");   //создаем список tr-элементов страницы которые содержат текст "job-status" внутри себя
+            return elements.iterator();  //создаем итератор по элментам страницы содержащим имена работ
+        }
+        catch (IOException e)
+        {
+            System.out.println("(JenkinsJobs) (getJobsIterator) Error: " + e);
+            return null;
+        }
     }
 
-    public  int getJobListFromServer(String serverAddress)  //Получение списка работ
-            throws IOException
+    public void getJobListFromServer(String serverAddress)  //Получение списка работ
     {
-        System.out.println("(JenkinsJobs) Getting job list from server...");
-
+        System.out.println("(JenkinsJobs) (getJobListFromServer) Getting job list from server...");
         ListOfJobs.remove(0, ListOfJobs.size());                            //очищаем список работ
-
-        Document document = Jsoup.connect(serverAddress).get(); //получаем копию страницы в виде документа
-
-        Elements elements = document.select("tr[class*=job-status]");   //создаем список tr-элементов страницы которые содержат текст "job-status" внутри себя
-
-        Iterator iteratorListOfJobs = elements.iterator();  //создаем итератор по элментам страницы содержащим имена работ
+        Iterator iteratorListOfJobs = getJobsIterator(serverAddress);
 
         while ( iteratorListOfJobs.hasNext() ) {
             Element element = (Element) iteratorListOfJobs.next();  //берем следующую работу
-            String jobName = element.attr("id");         //находим строку начинающуюся с "id"
-            jobName = jobName.substring(4, jobName.length());       //берем символы с 4 до последнего, это и есть имя работы
 
-            String _s1 = element.child(3).text();
-            int posNumber = _s1.indexOf("#");
-            String stringJobID = _s1.substring(posNumber + 1);
-            int jobID = getIntJobID(stringJobID);
+            String jobName = getJobNameFromElement(element);
+            int jobID = getJobIDFromElement(element);
+            Job.JobStatusListing status = getJobStatusFromServer(element);
 
-            URL url =  new URL(serverAddress + "/view/actual/job/" + jobName + "/lastSuccessfulBuild/artifact/*zip*/archive.zip");  //формируем ВОЗМОЖНУЮ(!) ссылку на скачивание работы
-            InputStream inputstream;
-            Job job;
-            try {
-                inputstream = url.openStream(); //пробуем открыть сформированную ссылку, если не получится то мы сразу попадаем в блок catch, иначе выполнение кода продолжится дальше и мы добавим работу в наш список
-                job = new Job(jobName, jobID, url, true, getJobStatusFromServer(element));  //создаем новую джобу с полученым с сервера именем, добавляем джобу в список и увеличиваем счетчик
-                inputstream.close();
-                if ( !(findTagInConfigFile(jobName)).equals("")) {
-                    job.setVisibleName(findTagInConfigFile(jobName));   //ищем в конфиг-файле тэг для найденой работы
-                    job.setLastChange(findTimeInConfigFile(jobName));   //ищем в конфиг файле время последнего изменения для найденой работы
-                }
-            }
-            catch (FileNotFoundException e) {
-                System.out.println("(Jenkins jobs) (getJobListFromServer) File not found error: " + e);
-                job = new Job(jobName, jobID, url, false, getJobStatusFromServer(element));
-                if ( !(findTagInConfigFile(jobName)).equals("")) {
-                    job.setVisibleName(findTagInConfigFile(jobName));
-                }
-                if ( !(findTimeInConfigFile(jobName)).equals("")) {
-                    job.setLastChange(findTimeInConfigFile(jobName));
-                }
-            }
-            catch (Exception e) {
-                System.out.println("(Jenkins jobs) (getJobListFromServer) Unknown error: " + e);
-                job = new Job(jobName, jobID, url, false, getJobStatusFromServer(element));
-                if ( !(findTagInConfigFile(jobName)).equals("")) {
-                    job.setVisibleName(findTagInConfigFile(jobName));
-                }
-                if ( !(findTimeInConfigFile(jobName)).equals("")) {
-                    job.setLastChange(findTimeInConfigFile(jobName));
-                }
-            }
-            addJob(job);
-            //mainController.addNewSettingToFile(job.getJobName(), job.getVisibleName());
+            ListOfJobs.add(new Job(jobName, jobID, status));
         }
-        return ListOfJobs.size();
     }
 
     public Job.JobStatusListing getJobStatusFromServer(Element element)    //получения статуса работы по элементу
@@ -129,7 +89,6 @@ public class JenkinsJobs
             Element statusElement = (Element) statusIterator.next();
             jobStatus = statusElement.attr("alt");
 
-            //{built,  Успешно, Провалилось, Прервано, Приостановлено, процессе, Неизвестно}
             switch (jobStatus)    //далее нужно считать строку и выбрать соответствующий статус
             {
                 case "Успешно":
@@ -151,7 +110,22 @@ public class JenkinsJobs
         return Job.JobStatusListing.Ошибка;
     }
 
-    public int getIntJobID(String stringJobID)
+    private String getJobNameFromElement(Element element)
+    {
+        String jobName = element.attr("id");                         //находим строку начинающуюся с "id"
+        jobName = jobName.substring(4, jobName.length());                       //берем символы с 4 до последнего, это и есть имя работы
+        return jobName;
+    }
+
+    private int getJobIDFromElement(Element element)
+    {
+        String _s1 = element.child(3).text();
+        int posNumber = _s1.indexOf("#");
+        String stringJobID = _s1.substring(posNumber + 1);
+        return getIntJobID(stringJobID);
+    }
+
+    private int getIntJobID(String stringJobID)
     {
         int jobID = -1;
         try {
@@ -165,71 +139,43 @@ public class JenkinsJobs
 
     public String refreshStatusOfAllJobs(String address)
     {
-        System.out.print("Refreshing job status... ");
-
-        long startTime = System.currentTimeMillis();
         String out = "";
 
-        try {
-            Document document = Jsoup.connect(address).get(); //получаем копию страницы в виде документа
-            Elements elements = document.select("tr[class*=job-status]");   //создаем список tr-элементов страницы которые содержат текст "job-status" внутри себя
+        Iterator iteratorListOfJobs = getJobsIterator(address);
 
-            Iterator iteratorListOfJobs = elements.iterator();          //создаем итератор по элментам страницы содержащим имена работ
+        while ( iteratorListOfJobs.hasNext() ) {
+            Element element = (Element) iteratorListOfJobs.next();                  //берем следующую работу
 
-            while ( iteratorListOfJobs.hasNext() ) {
-                Element element = (Element) iteratorListOfJobs.next();                  //берем следующую работу
-                String jobName = element.attr("id");                         //находим строку начинающуюся с "id"
-                jobName = jobName.substring(4, jobName.length());                       //берем символы с 4 до последнего, это и есть имя работы
+            String jobName                  = getJobNameFromElement(element);
+            int jobID                       = getJobIDFromElement(element);
+            Job.JobStatusListing status     = getJobStatusFromServer(element);
 
-                String _s1 = element.child(3).text();
-                int posNumber = _s1.indexOf("#");
-                String stringJobID = _s1.substring(posNumber + 1);
-                int jobID = getIntJobID(stringJobID);
+            for (int i = 0; i < ListOfJobs.size(); i++)
+            {
+                Job job = ListOfJobs.get(i);
 
-                Job.JobStatusListing status = getJobStatusFromServer(element);
-
-                for (int i = 0; i < ListOfJobs.size(); i++)
+                if ( job.getJobName().equals(jobName) && (!job.getJobStatus().equals(status)) )
                 {
-                    Job job = ListOfJobs.get(i);
+                        ListOfJobs.get(i).setJobStatus(status);
 
-                    if ( job.getJobName().equals(jobName) )
-                    {
-                        if ( !job.getJobStatus().equals(status) )
-                        {
-                            ListOfJobs.get(i).setJobStatus(status);
+                        if (ListOfJobs.get(i).getJobID() != jobID)
+                            ListOfJobs.get(i).setJobID(jobID);
+                        System.out.println("\n(JenkinsJobs)" + ListOfJobs.get(i).getJobName() + " changed status to: " + ListOfJobs.get(i).getJobStatus());
 
-                            if (ListOfJobs.get(i).getJobID() != jobID)
-                                ListOfJobs.get(i).setJobID(jobID);
-                            System.out.println("\n(JenkinsJobs)" + ListOfJobs.get(i).getJobName() + " changed status to: " + ListOfJobs.get(i).getJobStatus());
-
-                            out = formationStringWithChangedJobs(out, ListOfJobs.get(i));
-                        }
-                        else
-                            break;
-                    }
+                        out = formationStringWithChangedJobs(out, ListOfJobs.get(i));
+                        break;
                 }
             }
-
-            if (!out.equals(""))
-                out = out.substring(0, out.length() - 1);   //если были изменения в статусах то убираем последний перенос строки
-        }
-        catch (IOException e) {
-            System.out.println("(JenkinsJobs) Error on refreshing jobs status: " + e);
         }
 
-        long endTime = System.currentTimeMillis();
-        double time = (endTime - startTime);
-        time = time / 1000;
+        if (!out.equals(""))
+            out = out.substring(0, out.length() - 1);   //если были изменения в статусах то убираем последний перенос строки
+        else
+            out = "No jobs has been updated";           //иначе формируем строку для вывода в консоль
 
-        System.out.println(time + " sec");
-
-        if (out.equals(""))
-            out = "No jobs has been updated";
-
-        SimpleDateFormat formatForDateNow = new SimpleDateFormat("HH:mm:ss");
         Date date = new Date();
-
-        System.out.println(formatForDateNow.format(date) + ": " + out);
+        SimpleDateFormat formatForDateNow = new SimpleDateFormat("dd.MM.yy HH:mm:ss");
+        System.out.println(formatForDateNow.format(date) + "/ Status of auto update:" + ": " + out);
 
         return out;
     }

@@ -2,9 +2,14 @@ package sample;
 
 import com.sun.javafx.property.adapter.PropertyDescriptor;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
 import javafx.stage.DirectoryChooser;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.io.*;
@@ -13,7 +18,6 @@ import static sample.AppSettings.loadConfigFile;
 
 public class SettingsController
 {
-
     @FXML
     private TextField serverAddressTextField, downloadPathTextField;
     @FXML
@@ -22,8 +26,12 @@ public class SettingsController
     private CheckBox showNotificationsCheckBox, showAllJobsCheckBox, autoUpdateCheckBox, lastChangeCheckBox;
 
     private Main main;
+    private static Stage tagSettingsStage;
 
+    public static final int TAG_SCENE_WIDTH = 800;
+    public static final int TAG_SCENE_HEIGHT = 400;
 
+    private static final String settingsImageURL = "image/settings(small).png";
 
     @FXML
     private  void initialize()
@@ -44,10 +52,8 @@ public class SettingsController
         showAllJobsCheckBox.setSelected(AppSettings.isShowAllJobs());
         autoUpdateCheckBox.setSelected(AppSettings.isAutoUpdate());
 
-
-
         main = new Main();
-//        mainController = new MainController();
+
     }
 
     @FXML
@@ -68,7 +74,7 @@ public class SettingsController
     @FXML
     public void onSettingsClick()
     {
-        main.openTagSettings();
+        openTagSettings();
     }
 
     @FXML
@@ -89,14 +95,14 @@ public class SettingsController
         AppSettings.setAutoUpdate(autoUpdateCheckBox.isSelected());
 
 
-        Stage mainStage = main.getSettingsStage();
+        Stage mainStage = MainController.getSettingsStage();
         mainStage.close();
     }
 
     @FXML
     public void exitButton()
     {
-        Stage mainStage = main.getSettingsStage();
+        Stage mainStage = MainController.getSettingsStage();
         mainStage.close();
     }
 
@@ -120,49 +126,40 @@ public class SettingsController
         thread.start();
     }
 
+    private void openTagSettings()   //открите настроек тэгов
+    {
+        try {
 
-    //    @FXML
-//    private void onJobNameCheckBoxClick()
-//    {
-//        if (jobNameCheckBox.isSelected())
-//            AppSettings.setShowColumnJobName(true);
-//        else
-//            AppSettings.setShowColumnJobName(false);
-//    }
-//
-//    @FXML
-//    private void onJobIDCheckBoxClick()
-//    {
-//        if (jobIDCheckBox.isSelected())
-//            AppSettings.setShowColumnJobID(true);
-//        else
-//            AppSettings.setShowColumnJobID(false);
-//    }
-//
-//    @FXML
-//    private void onJobStatusCheckBoxClick()
-//    {
-//        if (jobStatusCheckBox.isSelected())
-//            AppSettings.setShowColumnJobStatus(true);
-//        else
-//            AppSettings.setShowColumnJobStatus(false);
-//    }
-//
-//    @FXML
-//    private void onIsFileCheckBoxClick()
-//    {
-//        if (isFileCheckBox.isSelected())
-//            AppSettings.setShowColumnIsFile(true);
-//        else
-//            AppSettings.setShowColumnIsFile(false);
-//    }
-//
-//    @FXML
-//    private void onTagNameCheckBoxClick()
-//    {
-//        if (tagNameCheckBox.isSelected())
-//            AppSettings.setShowColumnTagName(true);
-//        else
-//            AppSettings.setShowColumnTagName(false);
-//    }
+            Parent settingsRoot = FXMLLoader.load(getClass().getClassLoader().getResource("sample/tagSettings.fxml"));
+            Scene settingsScene = new Scene(settingsRoot, TAG_SCENE_WIDTH, TAG_SCENE_HEIGHT);
+
+            tagSettingsStage = new Stage();
+            tagSettingsStage.setTitle("TagSettingsController");
+            tagSettingsStage.initModality(Modality.APPLICATION_MODAL);
+            tagSettingsStage.initOwner(MainController.getSettingsStage());
+
+            tagSettingsStage.getIcons().add(new Image(settingsImageURL));
+
+            tagSettingsStage.setScene(settingsScene);
+
+            tagSettingsStage.setMaxHeight(TAG_SCENE_HEIGHT + 300);
+            tagSettingsStage.setMaxWidth(TAG_SCENE_WIDTH + 300);
+
+            tagSettingsStage.setMinHeight(TAG_SCENE_HEIGHT - 200);
+            tagSettingsStage.setMinWidth(TAG_SCENE_WIDTH - 300);
+
+            tagSettingsStage.setResizable(true);
+
+            tagSettingsStage.show();
+        }
+        catch (Exception e)
+        {
+            System.out.println("(Main) Can't open settings: " + e);
+        }
+    }
+
+    public static Stage getTagSettingsStage()
+    {
+        return tagSettingsStage;
+    }
 }

@@ -12,6 +12,9 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import static sample.AppSettings.findTagInConfigFile;
+import static sample.AppSettings.findTimeInConfigFile;
+
 public class Job {
 
     public enum JobStatusListing {built,  Успешно, Провалилось, Прервано, Приостановлено, Впроцессе, Неизвестно, Ошибка}
@@ -24,19 +27,37 @@ public class Job {
     private JobStatusListing jobStatus; //статус последней сборки
     private boolean isFile;
     private String lastChange;
+    private double size;    //размер джобы
 
-    public Job (String jobName, int jobID, URL jobURL, boolean isFile, JobStatusListing jobStatus)
+
+    public Job (String jobName, int jobID, JobStatusListing jobStatus)
     {
         this.jobName        = jobName ;
         this.jobID          = jobID;
-        this.jobURL         = jobURL;
         this.jobStatus      = jobStatus;
-        this.isFile         = isFile;
-        this.visibleName    = "";
-//        SimpleDateFormat formatForDateNow = new SimpleDateFormat("dd.MM.yy HH:mm:ss");
-//        Date date = new Date();
-//        this.lastChange     = formatForDateNow.format(date);
-        this.lastChange     = "-";
+        this.size           = AppSettings.findSizeInConfigFile(this.jobName);
+
+        if ( !(findTagInConfigFile(jobName)).equals(""))
+            this.visibleName = (findTagInConfigFile(jobName));   //ищем в конфиг-файле тэг для найденой работы
+        else
+            this.visibleName    = "";
+
+        if ( !(findTimeInConfigFile(jobName)).equals(""))
+            this.lastChange = (findTimeInConfigFile(jobName));
+        else
+            this.lastChange     = "-";
+
+        try
+        {
+            this.jobURL = new URL(AppSettings.getServerAddress() + "/view/actual/job/" + jobName + "/lastSuccessfulBuild/artifact/*zip*/archive.zip");  //формируем ВОЗМОЖНУЮ(!) ссылку на скачивание работы
+            InputStream inputstream = this.jobURL.openStream(); //пробуем открыть сформированную ссылку, если не получится то мы сразу попадаем в блок catch
+            inputstream.close();
+            this.isFile = true;
+        }
+        catch (Exception err)
+        {
+            this.isFile = false;
+        }
     }
 
     public Job (Job job)
@@ -48,6 +69,7 @@ public class Job {
         this.isFile         = job.isFile();
         this.visibleName    = job.getVisibleName();
         this.lastChange     = job.getLastChange();
+        this.size           = job.getSize();
     }
 
     //getters
@@ -106,6 +128,14 @@ public class Job {
         this.jobURL = jobURL;
     }
 
+    public double getSize() {
+        return size;
+    }
+
+    public void setSize(double size) {
+        this.size = size;
+    }
+
     public void setJobStatus(JobStatusListing jobStatus) {
         this.jobStatus = jobStatus;
         SimpleDateFormat formatForDateNow = new SimpleDateFormat("dd.MM.yy HH:mm:ss");
@@ -132,6 +162,9 @@ public class Job {
                 fileoutputstream.write(abyte0, 0, j);
             inputstream.close();
             fileoutputstream.close();
+
+            this.size = file.length();
+            AppSettings.changeSettingInConfig(this.jobName + "_size", String.valueOf(this.size));
 
             unzip(file);
         }

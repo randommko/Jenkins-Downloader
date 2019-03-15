@@ -10,8 +10,6 @@ import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.stage.Stage;
 
 import java.util.ArrayList;
-import java.util.List;
-
 
 public class TagSettingsController
 {
@@ -26,8 +24,6 @@ public class TagSettingsController
 
     private JenkinsJobs jobs;
     private ArrayList<String> list;
-    private Main main;
-    private MainController mainController;
 
     @FXML
     private void initialize() //метод в котором выполняется код при запуске приложения
@@ -36,8 +32,8 @@ public class TagSettingsController
 
         list = new ArrayList<>();
 
-        main = new Main();
-        mainController = new MainController();
+//        main = new Main();
+        MainController mainController = new MainController();
 
         this.jobs = mainController.getListOfJobs();
 
@@ -70,25 +66,18 @@ public class TagSettingsController
     {
         for (String string: list)
         {
-            String jobName = string.substring(0, string.indexOf(":"));
-            String newTag = string.substring(string.indexOf(":") + 1, string.length());
-            AppSettings.changeSettingInConfig(jobName, newTag);
+            String jobName = string.substring(0, string.indexOf(":"));  //имя джобы = весь тест до двоеточия
+            String newTag = string.substring(string.indexOf(":") + 1, string.length()); //тэг = весь тест после двоеточия
+            AppSettings.changeSettingInConfig(jobName + "_tag", newTag); //записываем тэг в конфиг
         }
 
-        Stage mainStage = main.getTagSettingsStage();
+        Stage mainStage = SettingsController.getTagSettingsStage();
         mainStage.close();
     }
 
     public void cancelButton()
     {
-        Stage mainStage = main.getSettingsStage();
+        Stage mainStage = SettingsController.getTagSettingsStage();
         mainStage.close();
-    }
-
-    public String writeJobToXML()
-    {
-        String out = "";
-
-        return out;
     }
 }

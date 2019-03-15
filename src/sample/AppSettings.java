@@ -40,7 +40,6 @@ public class AppSettings
     public static void loadConfigFile()  //загрузка настроек из файла
     {
         File configFile = new File(FILE_CONFIG_NAME);
-        System.out.println("(AppSettings) (Load config file) file: " + configFile.getAbsolutePath());
 
         if (!configFile.exists())
             createConfigFile(configFile);
@@ -54,7 +53,7 @@ public class AppSettings
                 break;
             case "SIMPLE":
                 try {
-                    System.out.println("(AppSettings) (Load config file) Loading SIMPLE config file");
+                    System.out.println("(AppSettings) (Load config file) Loading SIMPLE config file: " + configFile.getAbsolutePath());
 
                     FileInputStream input = new FileInputStream(configFile);
                     properties = new Properties();
@@ -81,26 +80,7 @@ public class AppSettings
                     showColumnIsFile = Boolean.valueOf(properties.getProperty("showColumnIsFile", "true"));
                     showColumnTagName = Boolean.valueOf(properties.getProperty("showColumnTagName", "true"));
                     showColTimeLastUpdate = Boolean.valueOf(properties.getProperty("showColTimeLastUpdate", "true"));
-//
-//                    System.out.println("(AppSettings) (Load config file) Find & set serverAddress: " + serverAddress);
-//                    System.out.println("(AppSettings) (Load config file) Find & set path: " + savePath);
-//                    System.out.println("");
-//                    System.out.println("(AppSettings) (Load config file) Find & set show notifications: " + showNotifications);
-//                    System.out.println("(AppSettings) (Load config file) Find & set show all jobs: " + showAllJobs);
-//                    System.out.println("(AppSettings) (Load config file) Find & set auto update: " + autoUpdate);
-//                    System.out.println("");
-//                    System.out.println("(AppSettings) (Load config file) Find & set widthColumnJobName: " + widthColumnJobName);
-//                    System.out.println("(AppSettings) (Load config file) Find & set widthColumnJobID: " + widthColumnJobID);
-//                    System.out.println("(AppSettings) (Load config file) Find & set widthColumnJobStatus: " + widthColumnJobStatus);
-//                    System.out.println("(AppSettings) (Load config file) Find & set widthColumnIsFile: " + widthColumnIsFile);
-//                    System.out.println("(AppSettings) (Load config file) Find & set widthColumnTagName: " + widthColumnTagName);
-//                    System.out.println("");
-//                    System.out.println("(AppSettings) (Load config file) Find & set showColumnTagName: " + showColumnJobName);
-//                    System.out.println("(AppSettings) (Load config file) Find & set showColumnJobID: " + showColumnJobID);
-//                    System.out.println("(AppSettings) (Load config file) Find & set showColumnJobStatus: " + showColumnJobStatus);
-//                    System.out.println("(AppSettings) (Load config file) Find & set showColumnIsFile: " + showColumnIsFile);
-//                    System.out.println("(AppSettings) (Load config file) Find & set showColumnTagName: " + showColumnTagName);
-
+                    System.out.println("(AppSettings) (Load config file) SIMPLE config file loaded");
                 }
                 catch (Exception e)
                 {
@@ -136,7 +116,8 @@ public class AppSettings
                     FileInputStream input = new FileInputStream(configFile);
                     properties = new Properties();
                     properties.load(new InputStreamReader(input));  //  properties.load(new InputStreamReader(input, Charset.forName("UTF-8")))
-                    out = properties.getProperty(nameOfJob);
+                    out = properties.getProperty(nameOfJob + "_tag");   //TODO: добавл _tag в конфиг файлы. Проверить.
+
                 } catch (Exception e) {
                     System.out.println("(AppSettings) (findTagInConfigFile) error on finding job: " + e);
                 }
@@ -190,6 +171,40 @@ public class AppSettings
         return out;
     }
 
+    public static double findSizeInConfigFile(String nameOfJob)
+    {
+        double out = -1;
+        File configFile = new File(FILE_CONFIG_NAME);
+
+        if (!configFile.exists())
+            createConfigFile(configFile);
+
+        switch (CONFIG_FLAG) {
+            case "JSON":
+
+                break;
+            case "XML":
+
+                break;
+            case "SIMPLE":
+                try {
+                    FileInputStream input = new FileInputStream(configFile);
+                    properties = new Properties();
+                    properties.load(new InputStreamReader(input));  //  properties.load(new InputStreamReader(input, Charset.forName("UTF-8")))
+                    out = Double.valueOf(properties.getProperty(nameOfJob + "_size"));
+                } catch (Exception e) {
+                    //System.out.println("(AppSettings) (findSizeInConfigFile) Job size not found: " + e);
+                }
+                break;
+            default:
+                out = -1;
+                System.out.println("(AppSettings) (findSizeInConfigFile) File not found");
+                break;
+        }
+
+        return out;
+    }
+
     public static void changeSettingInConfig(String changeSetting, String newValue)
     {
         newValue = changeSetting + "\t\t" + newValue;
@@ -233,7 +248,7 @@ public class AppSettings
 
             bufferedWriter.close();
             bufferedReader.close();
-            System.out.println("(AppSettings) (changeSettingInConfig) temp file delete:" + tempFile.delete());
+            //System.out.println("(AppSettings) (changeSettingInConfig) temp file delete:" + tempFile.delete());
         }
         catch (Exception e)
         {
@@ -251,7 +266,7 @@ public class AppSettings
 
                     FileWriter writer =  new FileWriter(new File(FILE_CONFIG_NAME));
 
-                    writer.write("serverAddress\thttp://[address]:[port]\n");
+                    writer.write("serverAddress\thttp://http://nix.mrcur.ru:8080\n");
                     writer.write("path\t\t\tD:\\\\Jenkins\n\n");
 
                     writer.write("showNotifications\t\t\ttrue\n");

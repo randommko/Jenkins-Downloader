@@ -1,16 +1,16 @@
 package sample;
 
 
-import java.awt.event.TextEvent;
 import java.text.DecimalFormat;
 import java.util.Iterator;
 
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -20,9 +20,9 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
-import javafx.stage.WindowEvent;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -42,8 +42,6 @@ public class MainController
 {
     @FXML
     private volatile Label statusLabel;
-//    @FXML
-//    private volatile Label settingsLabel;
     @FXML
     private TextArea logTextArea;
 
@@ -72,12 +70,14 @@ public class MainController
     private AnchorPane logAnchorPane;
 
 
+    private static Stage settingsStage, helpStage;
     private Main main;
     private static JenkinsJobs jobsForMainForm;
     private static JenkinsJobs allFoundJobs;
     public enum ClientStatus {Disconnected, Connected, Downloading, Extracting, Connecting, Updating, _lastStatus}
     private ClientStatus lastStatus, actualStatus;
     private static final String settingsImageURL = "image/settings(small).png";
+    private static final String helpImageURL = "image/help.png";
     private boolean hideLog;
 
 
@@ -102,142 +102,137 @@ public class MainController
 
     private Runnable endlessUpdateStatusOfJobs()
     {
-         Runnable updateStatus  = () -> {
+          Runnable updateStatus;
+          updateStatus  = () -> {
             String out;
-            String serverAddress = AppSettings.getServerAddress();
-
             do {
                 if (AppSettings.isAutoUpdate())
                 {
                     try {
-
-                        out = allFoundJobs.refreshStatusOfAllJobs(serverAddress);   //обновляем статусы всех работ. Возврашает строку с навзаниями работ у которых статус изменился
+                        out = allFoundJobs.refreshStatusOfAllJobs(AppSettings.getServerAddress());   //обновляем статусы всех работ. Возврашает строку с навзаниями работ у которых статус изменился
 
                         if (!out.equals("No jobs has been updated")) {
                             writeToLog(out);
                             trayMessage(out);
                         }
-                        TimeUnit.SECONDS.sleep(1);
                     }
                     catch (Exception e) {
-                        System.out.println("(MainController) Error on job status updating: " + e);
+                        System.out.println("(MainController) (endlessUpdateStatusOfJobs) Error on job status updating: " + e);
                         if (actualStatus == ClientStatus.Connected)
                             setStatus(ClientStatus.Disconnected);
-                        try
-                        {
-                            TimeUnit.SECONDS.sleep(10);
-                        }
-                        catch (Exception err)
-                        {
-                            System.out.println("(MainController) Can't call sleep method: " + err);
-                        }
                     }
                 }
-                else
-                    try
-                    {
-                        TimeUnit.SECONDS.sleep(1);
-                    }
-                    catch (Exception err)
-                    {
-                        System.out.println("(MainController) Can't call sleep method: " + err);
-                    }
+                sleep(1);
             } while (true);
         };
         return updateStatus;
     }
 
-    @FXML
-    private void connectToServer()              //нажатие кнопки "Refresh"
-    {
-        connect();
-    }
-
-    private void connect()
+    private void sleep(int timeout)
     {
         try
         {
-            jobsForMainForm.clear();
-            allFoundJobs.clear();
+            TimeUnit.SECONDS.sleep(timeout);
+        }
+        catch (Exception err)
+        {
+            System.out.println("(MainController) (sleep) Can't call sleep method: " + err);
+        }
+    }
 
-            String serverAddress = AppSettings.getServerAddress();
-            //serverAddress = serverAddressTextField.getText();
-            Document document = Jsoup.connect(serverAddress).get(); //получаем копию страницы в виде документа
+    @FXML
+    private void connectToServer()              //нажатие кнопки "Refresh"
+    {
+        setStatus(ClientStatus.Connecting);
+        connect();
+    }
 
-            Elements elements = document.select("title");   //создаем список tr-элементов страницы которые содержат текст "job-status" внутри себя
-            Iterator iterator = elements.iterator();  //создаем итератор по элментам страницы содержащим имена работ
+    private boolean isJenkins(String address)
+    {
+        try
+        {
+            Document document = Jsoup.connect(address).get(); //получаем копию страницы в виде документа
+
+            Elements elements = document.select("title");
+            Iterator iterator = elements.iterator();
             String serverName = "";
+
             while ( iterator.hasNext() )
             {
                 Element element = (Element) iterator.next();
                 serverName = element.attr("Jenkins");
             }
-            if ( !serverName.equals("") )
-            {
-                writeToLog("Server not found");
-                setStatus(ClientStatus.Disconnected);
-                trayMessage("Server not found");
-            }
-            else {
-                setStatus(ClientStatus.Updating);
-                trayMessage("Updating job list");
 
-                refreshingAllJobsStatus();
-            }
+            return serverName.equals("");
         }
         catch (IOException e)
         {
-            writeToLog("Enter server address: \"http://[address]:[port]\"");
+            writeToLog("Enter valid jenkins server address: \"http://[address]:[port]\"");
             setStatus(ClientStatus.Disconnected);
             trayMessage("Server not found");
+            return false;
         }
         catch (IllegalArgumentException err)
         {
             writeToLog("Enter correct server address");
             setStatus(ClientStatus.Disconnected);
+            return false;
         }
     }
 
-    private void refreshingAllJobsStatus()
+    private void connect()
     {
+        jobsForMainForm.clear();
+        allFoundJobs.clear();
+
         String serverAddress = AppSettings.getServerAddress();
+
         Runnable runnableGetJobList = () -> {
-            try {
-                jobsForMainForm.getJobListFromServer(serverAddress);    //Получение спика работ
-                allFoundJobs = new JenkinsJobs(jobsForMainForm);
 
-                if (!AppSettings.isShowAllJobs())
-                {
-                    Iterator iterator = jobsForMainForm.getListOfJobs().iterator();
-                    while (iterator.hasNext())
-                    {
-                        Job job = (Job) iterator.next();
-                        if ( !job.isFile() )
-                            iterator.remove();
-                    }
-                }
-                writeToLog("Job list has been updated.");
-                setStatus(ClientStatus.Connected);
-            }
-            catch (IOException e) {
-                writeToLog("Server not found!");
-                setStatus(ClientStatus.Disconnected);
+            if ( isJenkins(serverAddress) ) {
+                setStatus(ClientStatus.Updating);
+                trayMessage("Updating job list");
 
+                refreshingAllJobsStatus(serverAddress);
             }
-            catch (IllegalArgumentException err)
-            {
-                writeToLog("Port out of range");
+            else
                 setStatus(ClientStatus.Disconnected);
-            }
-            catch (Exception error)
-            {
-                System.out.println("(MainController) (refreshingAllJobsStatus) Unknown error: " + error);
-                setStatus(ClientStatus.Disconnected);
-            }
         };
 
         Thread threadGetJobList = new Thread(runnableGetJobList);
         threadGetJobList.start();
+    }
+
+    private void refreshingAllJobsStatus(String serverAddress)
+    {
+        try {
+            jobsForMainForm.getJobListFromServer(serverAddress);    //Получение спика работ
+            allFoundJobs = new JenkinsJobs(jobsForMainForm);
+
+            if (!AppSettings.isShowAllJobs())
+            {
+                Iterator iterator = jobsForMainForm.getListOfJobs().iterator();
+                while (iterator.hasNext())
+                {
+                    Job job = (Job) iterator.next();
+                    if ( !job.isFile() )
+                        iterator.remove();
+                }
+            }
+            writeToLog("Job list has been updated.");
+            setStatus(ClientStatus.Connected);
+        }
+        catch (IllegalArgumentException err)
+        {
+            writeToLog("Incorrect server address");
+            System.out.println("MainController) (refreshingAllJobsStatus) Incorrect server address: " + err);
+            setStatus(ClientStatus.Disconnected);
+        }
+        catch (Exception error)
+        {
+            System.out.println("(MainController) (refreshingAllJobsStatus) Unknown error: " + error);
+            setStatus(ClientStatus.Disconnected);
+        }
     }
 
     @FXML
@@ -257,22 +252,13 @@ public class MainController
     @FXML
     public void onSettingsClick()   //Открытие настроек
     {
-        main.openSettings();
+        openSettings();
 
         //TODO: проверить, можно ли убрать этот костыль
         Runnable runnable = () -> {
-                Window settings = main.getSettingsStage();
-                while (settings.isShowing())
-                {
-                    try
-                    {
-                        TimeUnit.SECONDS.sleep(1);
-                    }
-                    catch (InterruptedException e)
-                    {
+                while (settingsStage.isShowing())
+                    sleep(1);
 
-                    }
-                }
                 loadTableConfig();
             };
         Thread thread = new Thread(runnable);   //необходимо для загузрки актуального конфига после закрытия окна настроек
@@ -280,17 +266,20 @@ public class MainController
 
     }
 
+    public static Stage getSettingsStage()
+    {
+        return settingsStage;
+    }
+
     private void initWindow()
     {
         main = new Main();
-        //logTextArea = new TextArea();
         hideLog = false;
 
 
         try {
             Image settings = new Image(settingsImageURL);
             settingsButton.setGraphic(new ImageView(settings));
-            //settingsLabel.setText("Settings");
         }
         catch (Exception e)
         {
@@ -302,7 +291,7 @@ public class MainController
         configTable();
     }
 
-    public void loadTableConfig()
+    private void loadTableConfig()
     {
         Platform.runLater(
                 () -> {
@@ -395,7 +384,7 @@ public class MainController
         Platform.runLater(
             () ->
             {
-                System.out.println("(MainController) (writeToLog) msg:  " + text);
+                System.out.println("(MainController) (writeToLog) Log msg:  " + text);
                 Date date = new Date();
                 SimpleDateFormat formatForDateNow = new SimpleDateFormat("dd.MM.yy HH:mm:ss");
 
@@ -408,7 +397,7 @@ public class MainController
         );
     }
 
-    public void trayMessage (String text)
+    private void trayMessage (String text)
     {
         Platform.runLater(
                 () -> {
@@ -425,7 +414,7 @@ public class MainController
         );
     }
 
-    public void setVisibleProgressBar(boolean status)
+    private void setVisibleProgressBar(boolean status)
     {
         progressBar.setVisible(status);
     }
@@ -446,24 +435,10 @@ public class MainController
         }
     }
 
-    private double getLastSize(File folder)
-    {
-        double size = -1;
-        File[] folderEntries = folder.listFiles();
-        for (File entry : folderEntries) {
-            if (entry.isDirectory()) {
-                continue;
-            }
-            size = entry.length();
-        }
-
-        return size;
-    }
-
     private Runnable download (Job job, double sizeOfLastBuild, File file)
     {
         Runnable download = () -> {
-            if (sizeOfLastBuild == -1)
+            if (sizeOfLastBuild == -1.0)
                 writeToLog("Start downloading: " + job.getJobName() + " (#" + job.getJobID() + ")");
             else {
                 String formattedSize = new DecimalFormat("#0.00").format((sizeOfLastBuild / 1024) / 1024);
@@ -478,6 +453,7 @@ public class MainController
             trayMessage("Download complete: " + job.getJobName() + " (#" + job.getJobID() + ")");
             setStatus(ClientStatus.Connected);
         };
+
         return download;
     }
 
@@ -490,36 +466,35 @@ public class MainController
             folder.mkdirs();
         }
 
-        double sizeOfLastBuild = getLastSize(folder);
-        if(sizeOfLastBuild == 0)
-            setVisibleProgressBar(false);
+        double size = job.getSize();
+        setVisibleProgressBar(false);
 
         progressBar.setProgress(0);
         File file = new File(folder, job.getJobID() + ".zip");
 
         if (!file.exists())
         {
-            Thread downloadThread = new Thread(download(job, sizeOfLastBuild, file));
+            Thread downloadThread = new Thread(download(job, size, file));
             downloadThread.start();
 
-            if(sizeOfLastBuild != -1) {
+            if(size != -1.0) {
+                setVisibleProgressBar(true);
                 Runnable setProgress = () -> {
                     while (downloadThread.isAlive())
-                        progressBar.setProgress(file.length() / sizeOfLastBuild);
+                        progressBar.setProgress(file.length() / size);
+                    //TODO: хранить рамер скаченного фала в джобе
                 };
                 Thread setProgressThread = new Thread(setProgress);
                 setProgressThread.start();
             }
-            else
-                setVisibleProgressBar(false);
-        }
+    }
         else {
             writeToLog(job.getJobName() + " (#" + job.getJobID() + ") already exists");
             setStatus(ClientStatus._lastStatus);
         }
     }
 
-    public void setStatusText (String text, Color color)
+    private void setStatusText (String text, Color color)
     {
         try {
             Platform.runLater(
@@ -552,15 +527,13 @@ public class MainController
         {
             hideLogButton.setText("Hide log");
             logAnchorPane.setVisible(true);
-            main.getStage().setWidth(Main.SCENE_WIDTH);
-
-            //root.setPrefWidth(1000);
+            Main.getStage().setWidth(Main.SCENE_WIDTH);
         }
         else
         {
             hideLogButton.setText("Show log");
             logAnchorPane.setVisible(false);
-            main.getStage().setWidth(Main.SCENE_WIDTH - 500 + 15);
+            Main.getStage().setWidth(Main.SCENE_WIDTH - logAnchorPane.getWidth());
         }
         hideLog = !hideLog;
     }
@@ -578,7 +551,7 @@ public class MainController
                 case Connecting:
                     lastStatus = actualStatus;
                     actualStatus = ClientStatus.Connecting;
-                    setStatusText("Connecting to \"" + AppSettings.getServerAddress() + "\"", Color.GREEN);
+                    setStatusText("Finding Jenkins on: \"" + AppSettings.getServerAddress() + "\"", Color.GREEN);
                     progressIndicator.setVisible(true);
                     progressBar.setVisible(false);
                     downloadButton.setDisable(true);
@@ -620,7 +593,7 @@ public class MainController
                     actualStatus = ClientStatus.Downloading;
                     setStatusText("Downloading in " + AppSettings.getSavePath(), Color.GREEN);
                     progressIndicator.setVisible(true);
-                    progressBar.setVisible(true);
+                    //progressBar.setVisible(true);
                     downloadButton.setDisable(true);
                     refreshButton.setDisable(true);
                     settingsButton.setDisable(false);    //доступ к настрйокам false - есть, true - нет
@@ -630,7 +603,7 @@ public class MainController
                     actualStatus = ClientStatus.Disconnected;
                     progressIndicator.setVisible(true);
                     progressBar.setVisible(false);
-                    setStatusText("Can't find jenkins server on \"" + AppSettings.getServerAddress() + "\"", Color.RED);
+                    setStatusText("Can't find Jenkins server on \"" + AppSettings.getServerAddress() + "\"", Color.RED);
                     progressIndicator.setVisible(false);
                     downloadButton.setDisable(false);
                     refreshButton.setDisable(false);
@@ -656,7 +629,7 @@ public class MainController
 
     }
 
-    private void setStatus (ClientStatus status, Job job)    //установка статуса клиента (приложения)
+    private void setStatus (ClientStatus status, Job job)    //установка статуса клиента с именем джобы (приложения)
     {
 
         try
@@ -669,7 +642,7 @@ public class MainController
                 case Connecting:
                     lastStatus = actualStatus;
                     actualStatus = ClientStatus.Connecting;
-                    setStatusText("Connecting to \"" + AppSettings.getServerAddress() + "\"", Color.GREEN);
+                    setStatusText("Finding Jenkins on: \"" + AppSettings.getServerAddress() + "\"", Color.GREEN);
                     progressIndicator.setVisible(true);
                     progressBar.setVisible(false);
                     downloadButton.setDisable(true);
@@ -711,7 +684,7 @@ public class MainController
                     actualStatus = ClientStatus.Downloading;
                     setStatusText("Downloading \"" + job.getJobName() + " (#" + job.getJobID() + ")\" in \"" + AppSettings.getSavePath() + "\\" + job.getJobName() + "\\" + job.getJobID() + ".zip\"", Color.GREEN);
                     progressIndicator.setVisible(true);
-                    progressBar.setVisible(true);
+                    //progressBar.setVisible(true);
                     downloadButton.setDisable(true);
                     refreshButton.setDisable(true);
                     settingsButton.setDisable(false);   //доступ к настрйокам false - есть, true - нет
@@ -721,7 +694,7 @@ public class MainController
                     actualStatus = ClientStatus.Disconnected;
                     progressIndicator.setVisible(true);
                     progressBar.setVisible(false);
-                    setStatusText("Can't find jenkins server on \"" + AppSettings.getServerAddress() + "\"", Color.RED);
+                    setStatusText("Can't find Jenkins server on \"" + AppSettings.getServerAddress() + "\"", Color.RED);
                     progressIndicator.setVisible(false);
                     downloadButton.setDisable(false);
                     refreshButton.setDisable(false);
@@ -786,7 +759,61 @@ public class MainController
     @FXML
     private void helpButtonClick()
     {
-        main.openHelp();
+        openHelp();
     }
+
+    private void openSettings()  //открытие настроек
+    {
+        Window stage = Main.getStage();
+        try {
+            Parent settingsRoot = FXMLLoader.load(getClass().getClassLoader().getResource("sample/Settings.fxml"));
+            Scene settingsScene = new Scene(settingsRoot, 400, 400);
+
+            settingsStage = new Stage();
+            settingsStage.setTitle("TagSettingsController");
+            settingsStage.initModality(Modality.APPLICATION_MODAL);
+            settingsStage.initOwner(stage);
+
+            settingsStage.getIcons().add(new Image(settingsImageURL));
+
+            settingsStage.setScene(settingsScene);
+
+            settingsStage.setResizable(false);
+
+            settingsStage.show();
+        }
+        catch (Exception e)
+        {
+            System.out.println("(Main) Can't open settings: " + e);
+        }
+    }
+
+    private void openHelp()  //открытие help'a
+    {
+        Window stage = Main.getStage();
+        try {
+            Parent helpRoot = FXMLLoader.load(getClass().getClassLoader().getResource("sample/help.fxml"));
+            Scene helpScene = new Scene(helpRoot, 800, 400);
+
+            helpStage = new Stage();
+            helpStage.setTitle("Help");
+            helpStage.initModality(Modality.NONE);
+            helpStage.initOwner(stage);
+
+            helpStage.getIcons().add(new Image(helpImageURL));
+
+            helpStage.setScene(helpScene);
+
+            helpStage.setResizable(false);
+
+            helpStage.show();
+        }
+        catch (Exception e)
+        {
+            System.out.println("(Main) Can't open settings: " + e);
+        }
+    }
+
+    public static Stage getHelpStage() { return helpStage;}
 
 }
