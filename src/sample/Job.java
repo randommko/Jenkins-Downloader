@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -102,6 +103,29 @@ public class Job {
 
     public String getLastChange() {
         return lastChange;
+    }
+
+    public Date getLastChangeDate()
+    {
+        //Date lastChangeDate = new Date(lastChange);
+
+        if (lastChange != "-")
+        {
+            Date lastChangeDate;
+
+            try {
+                SimpleDateFormat format =
+                        new SimpleDateFormat("dd.MM.yy HH:mm:ss");
+                lastChangeDate = format.parse(lastChange);
+            }
+            catch(ParseException pe) {
+                throw new IllegalArgumentException(pe);
+            }
+            return lastChangeDate;
+        }
+        else
+            return null;
+
     }
 
     public void setVisibleName(String visibleName) {

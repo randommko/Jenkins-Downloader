@@ -20,8 +20,8 @@ import java.util.Timer;
 
 public class Main extends Application
 {
-    public static final int SCENE_WIDTH = 1200;
-    public static final int SCENE_HEIGHT = 600;
+    public static final int SCENE_WIDTH = 1200; //1200 or 801
+    public static final int SCENE_HEIGHT = 600; //600 or 800
 
     private static Stage stage;
     private boolean flagFirstMinimise;
@@ -37,6 +37,7 @@ public class Main extends Application
         try
         {
             stage = primaryStage;
+
             Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("sample/main.fxml"));
 
             Scene scene = new Scene(root, SCENE_WIDTH, SCENE_HEIGHT);

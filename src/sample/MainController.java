@@ -238,10 +238,32 @@ public class MainController
     @FXML
     private void downloadJobButton ()           //Нажатие на кнопку "Download" и начало скачивания в новом потоке
     {
+        Job job = getSelectedJob();
+        if (job.isFile())
+            initDownload(job);
+        else
+            writeToLog("Selected job (" + job.getJobName() + ") is not a file.");
+    }
+
+    private void initDownload(Job job)
+    {
         try
         {
-            Job job = getSelectedJob();
-            startJobDownload(job);
+            if (job.getJobStatus() != Job.JobStatusListing.Впроцессе)
+                startJobDownload(job);
+            else {
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                alert.setTitle("Confirmation Dialog");
+                alert.setHeaderText("New build of job in process.");
+                alert.setContentText("Do you want start downloading last success build?");
+
+                Optional<ButtonType> result = alert.showAndWait();
+                if (result.get() == ButtonType.OK){
+                    startJobDownload(job);
+                } else {
+                    writeToLog("New build of job in process. Please wait.");
+                }
+            }
         }
         catch (NullPointerException e)
         {
@@ -341,21 +363,11 @@ public class MainController
             row.setOnMouseClicked(event -> {
                 if (event.getClickCount() == 2 && (! row.isEmpty()) ) {
                     Job job = row.getItem();
+
                     if (job.isFile())
-                    {
-                        if (job.getJobStatus() != Job.JobStatusListing.Впроцессе)
-                            startJobDownload(job);
-                        else
-                            writeToLog(job.getJobName() + " (#" + job.getJobID() + ")" + " is in processing");
-                    }
+                        initDownload(job);
                     else
-                    {
-                        if (job.getJobStatus() != Job.JobStatusListing.Впроцессе)
-                            //startJob(job);
-                            writeToLog("Can't starts jobs. Only downloading!");
-                        else
-                            writeToLog(job.getJobName() + " (#" + job.getJobID() + ")" + " is in processing");
-                    }
+                        writeToLog("Selected job (" + job.getJobName() + ") is not a file.");
                 }
             });
             return row ;
@@ -457,15 +469,20 @@ public class MainController
         return download;
     }
 
-    private void startJobDownload(Job job)
+    private boolean startJobDownload(Job job)
     {
         String path = AppSettings.getSavePath();
         File folder = new File(path + "\\" + job.getJobName() + "\\");
 
-        if (!folder.exists()) {
-            folder.mkdirs();
+        if (!folder.exists())
+        {
+            if (!folder.mkdirs())
+            {
+                writeToLog("Can't create folder for download. Check file path in settings");
+                setStatus(ClientStatus._lastStatus);
+                return false;
+            }
         }
-
         double size = job.getSize();
         setVisibleProgressBar(false);
 
@@ -482,16 +499,16 @@ public class MainController
                 Runnable setProgress = () -> {
                     while (downloadThread.isAlive())
                         progressBar.setProgress(file.length() / size);
-                    //TODO: хранить рамер скаченного фала в джобе
                 };
                 Thread setProgressThread = new Thread(setProgress);
                 setProgressThread.start();
             }
-    }
+        }
         else {
             writeToLog(job.getJobName() + " (#" + job.getJobID() + ") already exists");
             setStatus(ClientStatus._lastStatus);
         }
+        return true;
     }
 
     private void setStatusText (String text, Color color)

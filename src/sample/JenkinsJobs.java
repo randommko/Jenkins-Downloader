@@ -75,6 +75,7 @@ public class JenkinsJobs
             Job.JobStatusListing status = getJobStatusFromServer(element);
 
             ListOfJobs.add(new Job(jobName, jobID, status));
+            //System.out.println("(JenkinsJobs) (getJobListFromServer) Job found: " + jobName);
         }
     }
 
@@ -162,6 +163,7 @@ public class JenkinsJobs
                             ListOfJobs.get(i).setJobID(jobID);
                         System.out.println("\n(JenkinsJobs)" + ListOfJobs.get(i).getJobName() + " changed status to: " + ListOfJobs.get(i).getJobStatus());
 
+
                         out = formationStringWithChangedJobs(out, ListOfJobs.get(i));
                         break;
                 }
@@ -175,6 +177,7 @@ public class JenkinsJobs
 
         Date date = new Date();
         SimpleDateFormat formatForDateNow = new SimpleDateFormat("dd.MM.yy HH:mm:ss");
+
         System.out.println(formatForDateNow.format(date) + "/ Status of auto update:" + ": " + out);
 
         return out;

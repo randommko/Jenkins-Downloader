@@ -116,7 +116,7 @@ public class AppSettings
                     FileInputStream input = new FileInputStream(configFile);
                     properties = new Properties();
                     properties.load(new InputStreamReader(input));  //  properties.load(new InputStreamReader(input, Charset.forName("UTF-8")))
-                    out = properties.getProperty(nameOfJob + "_tag");   //TODO: добавл _tag в конфиг файлы. Проверить.
+                    out = properties.getProperty(nameOfJob + "_tag");
 
                 } catch (Exception e) {
                     System.out.println("(AppSettings) (findTagInConfigFile) error on finding job: " + e);
@@ -248,6 +248,7 @@ public class AppSettings
 
             bufferedWriter.close();
             bufferedReader.close();
+            //System.out.println("(AppSettings) (changeSettingInConfig) Changed in config file: " + newValue);
             //System.out.println("(AppSettings) (changeSettingInConfig) temp file delete:" + tempFile.delete());
         }
         catch (Exception e)
@@ -266,7 +267,7 @@ public class AppSettings
 
                     FileWriter writer =  new FileWriter(new File(FILE_CONFIG_NAME));
 
-                    writer.write("serverAddress\thttp://http://nix.mrcur.ru:8080\n");
+                    writer.write("serverAddress\thttp://nix.mrcur.ru:8080\n");
                     writer.write("path\t\t\tD:\\\\Jenkins\n\n");
 
                     writer.write("showNotifications\t\t\ttrue\n");
